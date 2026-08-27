@@ -12,6 +12,8 @@ A web library for your game collection. Drop ROM files into a folder per console
 
 RomM comes with its own database and cache; nothing else needs installing. Your library, artwork, and database are all included in StartOS backups.
 
+This package runs RomM 5.2.0 and configures two scan workers plus three web workers for the service's StartOS CPU allocation.
+
 RomM signs users in with a username and password. StartOS creates the first account rather than leaving its setup wizard open to whoever reaches the address first.
 
 ## Getting set up

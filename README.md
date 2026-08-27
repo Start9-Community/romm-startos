@@ -36,7 +36,7 @@ Two images run, one of them ours.
 
 | Image     | Source                                                                       | Entrypoint           |
 | --------- | ---------------------------------------------------------------------------- | -------------------- |
-| `romm`    | Upstream `rommapp/romm` all-in-one, unmodified, pinned by digest             | Upstream's, as PID 1 |
+| `romm`    | `rommapp/romm:5.2.0@sha256:3512f2ca455782f90247271bed23116e6bc675bc74e379be2c41696e607ab11e` | Upstream's, as PID 1 |
 | `mariadb` | `mariadb.Dockerfile` — the official MariaDB image plus five command symlinks | Upstream's, as PID 1 |
 
 Both build for `x86_64` and `aarch64`.
@@ -72,6 +72,8 @@ One model, holding StartOS-side state rather than upstream configuration.
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
 
 RomM itself has no configuration file the package owns. Everything the package asserts is delivered as an environment variable and re-applied on every start, so a value changed inside RomM that also appears in that list does not survive a restart. `store.json` is what makes the provider credentials survive one.
+
+RomM runs with `SCAN_WORKERS=2` and `WEB_SERVER_CONCURRENCY=3`, matching upstream's recommended one-CPU container defaults for scan throughput and API responsiveness.
 
 **`main` reads the store reactively**, so writing it restarts the service. This is how all three actions take effect without asking the user to restart anything.
 
@@ -201,6 +203,8 @@ startos_managed_env_vars:
   - DB_PASSWD
   - ROMM_AUTH_SECRET_KEY
   - ROMM_BASE_URL
+  - SCAN_WORKERS
+  - WEB_SERVER_CONCURRENCY
   - IGDB_CLIENT_ID
   - IGDB_CLIENT_SECRET
   - MOBYGAMES_API_KEY

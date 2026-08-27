@@ -161,6 +161,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
           DB_USER: databaseUser,
           DB_PASSWD: store.databasePassword,
           ROMM_AUTH_SECRET_KEY: store.authSecret,
+          SCAN_WORKERS: '2',
+          WEB_SERVER_CONCURRENCY: '3',
           ...(store.igdb?.selection === 'enabled' && {
             IGDB_CLIENT_ID: store.igdb.value.clientId,
             IGDB_CLIENT_SECRET: store.igdb.value.clientSecret,
