@@ -1,9 +1,13 @@
 export const short = {
   en_US: 'A self-hosted ROM manager for browsing and organizing game libraries',
-  es_ES: 'Un gestor de ROM autoalojado para explorar y organizar bibliotecas de juegos',
-  de_DE: 'Ein selbst gehosteter ROM-Manager zum Durchsuchen und Organisieren von Spielesammlungen',
-  pl_PL: 'Samodzielnie hostowany menedżer ROM-ów do przeglądania i organizowania bibliotek gier',
-  fr_FR: 'Un gestionnaire de ROM auto-hébergé pour parcourir et organiser les ludothèques',
+  es_ES:
+    'Un gestor de ROM autoalojado para explorar y organizar bibliotecas de juegos',
+  de_DE:
+    'Ein selbst gehosteter ROM-Manager zum Durchsuchen und Organisieren von Spielesammlungen',
+  pl_PL:
+    'Samodzielnie hostowany menedżer ROM-ów do przeglądania i organizowania bibliotek gier',
+  fr_FR:
+    'Un gestionnaire de ROM auto-hébergé pour parcourir et organiser les ludothèques',
 }
 
 export const long = {

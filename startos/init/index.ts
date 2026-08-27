@@ -5,6 +5,7 @@ import { setInterfaces } from '../interfaces'
 import { sdk } from '../sdk'
 import { versionGraph } from '../versions'
 import { seedStore } from './seedStore'
+import { watchCredentials } from './watchCredentials'
 
 export const init = sdk.setupInit(
   restoreInit,
@@ -13,6 +14,7 @@ export const init = sdk.setupInit(
   setInterfaces,
   setDependencies,
   actions,
+  watchCredentials,
 )
 
 export const uninit = sdk.setupUninit(versionGraph)

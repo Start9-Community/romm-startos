@@ -1,8 +1,8 @@
-node_modules/
-javascript/
 *.s9pk
-*.s9pk.*
-result
-
-.ai-workspace
+startos/*.js
+node_modules/
 .DS_Store
+.vscode/
+docker-images
+javascript
+ncc-cache
