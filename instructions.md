@@ -1,37 +1,42 @@
 # RomM
 
-RomM provides a browser interface for organizing, enriching, and browsing your game library.
+StartOS creates RomM's administrator account for you. Run **Set Admin Password** before you start RomM — the password it gives you is shown once.
 
-## First start
+## Documentation
 
-1. Start RomM and wait for both Database and Web Interface health checks to become ready. Initial database setup can take several minutes.
-2. Open **Interfaces → RomM Web Interface**.
-3. Complete RomM's first-run administrator registration in the web interface.
-4. Keep RomM authentication enabled. StartOS does not add authentication to this interface.
+- [RomM documentation](https://docs.romm.app) — the upstream guide, including the folder layout for your library and the list of supported platforms.
 
-The StartOS administrator controls where the interface is reachable. LAN addresses are normally available first. Tor requires the separate Tor service and must be enabled for this interface by the administrator.
+## What you get on StartOS
 
-## Metadata providers
+A web library for your game collection. Drop ROM files into a folder per console, run a scan, and RomM matches each file against online games databases to fill in cover art, release dates, descriptions, and box scans — then lets you browse, search, and play the supported ones in the browser.
 
-RomM works without external metadata credentials, but enrichment is limited. Run **Actions → Configure Metadata Providers** to save optional credentials for IGDB, MobyGames, and SteamGridDB. The action never displays saved secret values. Restart RomM after saving or clearing credentials.
+RomM comes with its own database and cache; nothing else needs installing. Your library, artwork, and database are all included in StartOS backups.
 
-## Importing ROMs
+RomM signs users in with a username and password. StartOS creates the first account rather than leaving its setup wizard open to whoever reaches the address first.
 
-Place files in the library using the folder layout documented for RomM 5.1.0, then start a scan from the RomM web interface. Test with a small library before copying a large collection.
+## Getting set up
 
-RomM 5.1.0 may use hardlinks between its library and asset directories. Keep all RomM application data in the package-managed storage; do not replace individual `/romm` subdirectories with unrelated external filesystems.
+1. Run **Set Admin Password** and save the username and password it gives you. RomM will not start until you have, which is why it is the only thing you can press at first.
+2. Start RomM and wait for both **Database** and **Web Interface** to go green. The first start takes several minutes while the database initialises and your account is created.
+3. Open the **RomM Web Interface** and sign in with those credentials.
+4. Run **Configure Metadata Providers** and turn on at least one. Without one, a scan finds your files but leaves them with no cover art or descriptions.
+5. Add your ROM files under `library/`, one folder per console, using the folder names on the Supported Platforms page of the upstream documentation. Start with a handful of files before copying a large collection.
+6. Run a scan from RomM's **Library** screen and check that the games come back with cover art.
 
-If you experimented with the abandoned StartOS 0.3 wrapper, do not copy its database, `.env`, Redis data, or backup. Copy only ROM files into a clean installation and let RomM rebuild its metadata.
+## Using RomM
 
-## Storage and backups
+### Web interface
 
-The StartOS backup contains the MariaDB database, RomM configuration, generated secrets, artwork/resources, Redis data, and the ROM library. Because ROM libraries can be very large, confirm that the backup destination has enough free space and maintain an independent copy of irreplaceable ROM files.
+Everything happens here: browsing and searching the collection, editing what a scan got wrong, adding save files and screenshots, managing users, and playing supported systems in the browser.
 
-Backups from the old StartOS 0.3 wrapper cannot be restored into this native StartOS 0.4 package. After restoring, verify sign-in, library visibility, and a representative game before treating the restore as successful.
+### Actions
 
-## Security
+- **Set Admin Password** — generates a new password for the `admin` account and shows it once. Run it again whenever you want a fresh password or have lost the one you had; RomM restarts to apply it, and everyone signed in is signed out.
 
-- Use a strong RomM administrator password.
-- Enable only the StartOS gateway addresses you need.
-- Treat metadata-provider credentials as secrets.
-- Do not assume a Tor or public address exists unless it is shown and enabled in the Interfaces tab.
+  If you change the `admin` password from inside RomM instead, this action can no longer replace it — StartOS no longer knows the current one, and the action will tell you so. Use RomM's own profile page from then on.
+
+- **Configure Metadata Providers** — turns each of IGDB, MobyGames, and SteamGridDB on or off, asking for that provider's credentials only when you turn it on. IGDB covers the most ground and is the one to start with; MobyGames fills in descriptions for older titles, and SteamGridDB adds artwork. All three are free to sign up for. Saving restarts RomM.
+
+## Limitations
+
+Your ROM library is stored with the rest of RomM's data and is included in every backup, which can make backups very large. It cannot be moved to separate storage or left out.

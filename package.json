@@ -1,10 +1,9 @@
 {
   "name": "romm-startos",
-  "private": true,
   "scripts": {
     "build": "rm -rf ./javascript && ncc build startos/index.ts -o ./javascript",
-    "check": "tsc --noEmit",
-    "format": "prettier --write startos"
+    "prettier": "prettier --write startos",
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "@start9labs/start-sdk": "2.0.9"

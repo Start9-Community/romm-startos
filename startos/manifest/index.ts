@@ -5,7 +5,7 @@ export const manifest = setupManifest({
   id: 'romm',
   title: 'RomM',
   license: 'AGPL-3.0',
-  packageRepo: 'https://github.com/alextab93/romm-startos',
+  packageRepo: 'https://github.com/Start9-Community/romm-startos',
   upstreamRepo: 'https://github.com/rommapp/romm',
   marketingUrl: 'https://romm.app/',
   donationUrl: null,
@@ -21,9 +21,7 @@ export const manifest = setupManifest({
     },
     mariadb: {
       source: {
-        dockerBuild: {
-          workdir: 'docker-images/mariadb',
-        },
+        dockerBuild: { dockerfile: './mariadb.Dockerfile' },
       },
       arch: ['x86_64', 'aarch64'],
     },

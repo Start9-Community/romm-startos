@@ -1,58 +1,212 @@
-# RomM for StartOS
+<p align="center">
+  <img src="icon.svg" alt="RomM Logo" width="21%">
+</p>
 
-This repository packages [RomM](https://github.com/rommapp/romm) 5.1.0 as a native StartOS 0.4 SDK-v2 service.
+# RomM on StartOS
 
-RomM scans, enriches, browses, and manages a personal game library from a web interface. This package uses the official RomM container and a private MariaDB sidecar. RomM's bundled Redis instance, web server, migrations, watcher, worker, and scheduler are started by the upstream `/init` process.
+> Everything not listed in this document should behave the same as upstream
+> RomM. If a feature, setting, or behavior is not mentioned here, the upstream
+> documentation is accurate and fully applicable — see the Documentation
+> section of `instructions.md` for links.
 
-## Quick start (StartOS)
+RomM is a self-hosted manager for a personal game library: it scans a folder of ROMs, matches each one against online games databases for cover art and metadata, and serves the result as a browsable, playable web collection.
 
-Install RomM from the start9.tabordalab.com (TabordaLab StartOS registry), or sideload the `.s9pk` package.
+---
 
-<img width="1419" height="527" alt="image" src="https://github.com/user-attachments/assets/38d7f4f6-73e2-4b8d-a855-b00aa41f852f" />
+## Table of Contents
 
-## Architecture
+- [Image and Container Runtime](#image-and-container-runtime)
+- [Volume and Data Layout](#volume-and-data-layout)
+- [File Models](#file-models)
+- [Dependencies](#dependencies)
+- [Network Access and Interfaces](#network-access-and-interfaces)
+- [Installation and First-Run Flow](#installation-and-first-run-flow)
+- [Actions](#actions)
+- [Tasks](#tasks)
+- [Health Checks](#health-checks)
+- [Backups and Restore](#backups-and-restore)
+- [Limitations and Differences](#limitations-and-differences)
+- [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
 
-- `rommapp/romm:5.1.0` serves the UI on internal port `8080`.
-- `mariadb:11.4.5` stores RomM metadata on internal port `3306`.
-- The daemons share the service network namespace; MariaDB listens only inside the package.
-- RomM starts only after the MariaDB health check succeeds.
-- StartOS exposes a single `ui` interface. The administrator chooses which installed gateways may publish an address.
-- Authentication is provided by RomM, not by the StartOS interface proxy.
+---
 
-## Persistent data
+## Image and Container Runtime
 
-The entire `main` volume is mounted at `/romm` and contains `library/`, `resources/`, `assets/`, `config/`, `redis-data/`, and the package's `store.json`. Mounting the parent volume is required by RomM 5.1.0 so hardlinks across its application directories remain on one filesystem. The same `redis-data/` subpath is also mounted at `/redis-data`. The `database` volume contains MariaDB at `/var/lib/mysql`.
+Two images run, one of them ours.
 
-Internal MariaDB credentials and `ROMM_AUTH_SECRET_KEY` are generated once during a clean install. The Configure Metadata Providers action stores supported optional variables: `IGDB_CLIENT_ID`, `IGDB_CLIENT_SECRET`, `MOBYGAMES_API_KEY`, and `STEAMGRIDDB_API_KEY`.
+| Image     | Source                                                                       | Entrypoint           |
+| --------- | ---------------------------------------------------------------------------- | -------------------- |
+| `romm`    | Upstream `rommapp/romm` all-in-one, unmodified, pinned by digest             | Upstream's, as PID 1 |
+| `mariadb` | `mariadb.Dockerfile` — the official MariaDB image plus five command symlinks | Upstream's, as PID 1 |
 
-## Backups
+Both build for `x86_64` and `aarch64`.
 
-Backups create a logical MariaDB dump and copy the `main` volume. The ROM library is included for correctness, so backups may be large. StartOS stops the service while creating or restoring a backup.
+The MariaDB image exists only because `sdk.Backups.withMysqlDump` invokes `mysqld`, `mysqladmin`, `mysqldump`, `mysql` and `mysql_install_db`, which MariaDB 11 no longer installs under those names. Nothing else about the image is changed, and the daemon runs upstream's own entrypoint.
 
-## Legacy package policy
+The upstream RomM image is itself a supervisor: behind its single entrypoint it runs the web server, its own Valkey instance, the schema migrator, the filesystem watcher, and the background worker and scheduler. The package does not address those individually.
 
-This is a clean rewrite. The abandoned StartOS 0.3 wrapper never formed a supported release and has no upgrade, database, or backup compatibility with this package. Users must copy only their ROM files into a clean installation and let RomM scan them again.
+Two subcontainers run, `romm-app-sub` and `romm-mariadb-sub`. Attach with `start-cli package attach romm -n romm-app-sub`.
 
-## Images
+## Volume and Data Layout
 
-Both images are pinned to immutable multi-architecture OCI indexes:
+Two volumes, one for the library and one for the database.
 
-- `rommapp/romm:5.1.0@sha256:ce9d86ab531e09fede45d00f426e3bf2d1f5dd14846f94d6360d77a92a413028`
-- `mariadb:11.4.5@sha256:49117dcc565cf51aa57ac5fca59ab31213402ff0eae6ffc13c46a37b938f7e4b`
+| Volume     | Mount point      | Contents                                                                    |
+| ---------- | ---------------- | --------------------------------------------------------------------------- |
+| `main`     | `/romm`          | `library/`, `resources/`, `assets/`, `config/`, `redis-data/`, `store.json` |
+| `main`     | `/redis-data`    | The same `redis-data/` directory, at the path Valkey writes to              |
+| `database` | `/var/lib/mysql` | MariaDB's data directory                                                    |
 
-The verified Linux platforms are `amd64` and `arm64`.
+`main` is mounted whole rather than one subdirectory at a time because RomM hardlinks between its library and asset directories, which only works while both sit on one filesystem. The second mount is not a copy — `redis-data/` is one directory reachable at two paths, because Valkey's data path is fixed outside `/romm`.
 
-## Build
+The library is under `main`, so it is part of every backup. On a large collection that is the dominant cost.
 
-```sh
-npm ci
-npm run check
-npm run build
-make
+## File Models
+
+One model, holding StartOS-side state rather than upstream configuration.
+
+| Model        | File              | Seeded                                    | Rewritten       |
+| ------------ | ----------------- | ----------------------------------------- | --------------- |
+| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By both actions |
+
+It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
+
+RomM itself has no configuration file the package owns. Everything the package asserts is delivered as an environment variable and re-applied on every start, so a value changed inside RomM that also appears in that list does not survive a restart. `store.json` is what makes the provider credentials survive one.
+
+**`main` reads the store reactively**, so writing it restarts the service — which is how both actions take effect, and why neither asks the user to restart anything.
+
+Because `main` is mounted whole, `store.json` is visible to RomM at `/romm/store.json`.
+
+## Dependencies
+
+None.
+
+## Network Access and Interfaces
+
+One HTTP interface. MariaDB is reachable only inside the package's own network namespace and is never exported.
+
+| Interface          | Id   | Type | Port | Purpose                               |
+| ------------------ | ---- | ---- | ---- | ------------------------------------- |
+| RomM Web Interface | `ui` | `ui` | 8080 | The RomM application and its REST API |
+
+RomM authenticates its own users; the interface adds no authentication of its own.
+
+## Installation and First-Run Flow
+
+Install generates the database passwords and the session secret, then raises a `critical` task pointing at **Set Admin Password**. RomM will not start until that has been run, so the credential exists and has been shown to the user before the service comes up.
+
+On first start MariaDB initialises its data directory, the `database-grants` oneshot makes sure the `romm` account exists for the hosts RomM connects from, RomM applies its own schema migrations, and then the `admin-account` oneshot creates the administrator inside RomM. The whole sequence takes several minutes on first run and the health checks stay red throughout; that is expected.
+
+**The package pre-empts RomM's own setup wizard.** Upstream shows it to whoever reaches the address first and lets them claim the instance; here the account already exists by the time the interface is reachable, so the wizard never appears.
+
+## Actions
+
+Two actions.
+
+### Set Admin Password
+
+- **When to run it** — at install, prompted by the task; afterwards to rotate the password, including after losing it.
+- **What it changes** — generates a new random password and writes it to `store.json`. On a rotation it also applies it to the running application.
+- **Cost** — writing the store restarts RomM, so the interface is briefly unavailable. Every open session is invalidated.
+- **Repeat safety** — safe to repeat, and never a no-op: each run mints a new password and discards the previous one.
+- **Outputs** — the username and the new password, shown once.
+
+**Its `allowedStatuses` changes with the package's state, which is deliberate.** Before any password exists it is `only-stopped`, because the first one is applied by the `admin-account` oneshot on the next start. Once one exists it is `only-running`, because a later change goes through RomM's API.
+
+A rotation authenticates as the admin with the password in `store.json` and calls RomM's own user-update endpoint. **If the user changed their password from inside RomM, rotation fails** with a message saying so — the store no longer holds the current password. Recovery is RomM's own profile page, not this action.
+
+### Configure Metadata Providers
+
+- **When to run it** — after the first sign-in, and whenever a provider is added, removed, or its credential rotated. RomM works with none of them; scanning just yields bare filenames.
+- **What it changes** — the three provider keys in `store.json`. Nothing else in the file.
+- **Cost** — saving restarts RomM, so the interface is briefly unavailable.
+- **Repeat safety** — fully idempotent. The form is pre-filled with what is already saved.
+- **Outputs** — none.
+
+Each provider is a disabled/enabled union, so its credentials are asked for only when it is turned on, and turning one off is a single choice rather than a set of fields to blank.
+
+## Tasks
+
+One task, raised at install and again whenever no password is stored.
+
+| Task                       | Severity   | Raised by                            | Cleared by         |
+| -------------------------- | ---------- | ------------------------------------ | ------------------ |
+| Run **Set Admin Password** | `critical` | Init, whenever no password is stored | Running the action |
+
+`critical` blocks RomM from starting and suspends the ordinary Start/Stop controls, so a user reporting "there are no buttons" is looking at this. The check runs on every init rather than only at install.
+
+## Health Checks
+
+Two checks and one oneshot between them.
+
+| Check     | Probes                 | Grace period |
+| --------- | ---------------------- | ------------ |
+| `mariadb` | Port 3306 is listening | 120s         |
+| `romm`    | Port 8080 is listening | 180s         |
+
+`romm` is gated behind the `database-grants` oneshot, which is in turn gated behind `mariadb` — so RomM never starts against a database it cannot log in to. The `admin-account` oneshot runs after `romm` is ready, and is a no-op once RomM reports that it has users.
+
+A `mariadb` check still failing past its grace period means the data directory did not come up: its logs carry the reason, usually a version mismatch after a MariaDB bump or an interrupted initialisation. A `romm` check still failing past its own means either the schema migration is still running — normal after an upstream version bump on a large library — or RomM could not authenticate, in which case the `database-grants` oneshot's output says which password it fell back to.
+
+## Backups and Restore
+
+The strategy is mixed, and the difference matters: `main` is copied wholesale, while `database` is **dumped and replayed** rather than copied. Its files are never captured. Restore rebuilds the data directory from scratch, replays the dump into it, and hands back a database with only the accounts the restore created.
+
+That last point is why `database-grants` exists — the accounts the restore leaves behind are not the ones RomM connects as, nor the ones its views and triggers name as definer. The oneshot repairs both on the first start after a restore, with the passwords carried over in `store.json`.
+
+Nothing is excluded from the backup, so it includes the ROM library. Check the destination has room before running one, and keep an independent copy of anything irreplaceable — the library is the one thing here that cannot be rebuilt.
+
+A restored instance is usable straight away: the accounts, the library, and the artwork all come back, and the administrator password is the one that was in use when the backup was taken.
+
+## Limitations and Differences
+
+1. **The whole `main` volume is one mount, so the library cannot be pointed at separate storage.** Upstream supports mounting `library/` from elsewhere; here it must live with the rest of RomM's data, because RomM hardlinks across those directories.
+2. **RomM's bundled Valkey is not reachable or configurable**, and has no health check of its own — a Valkey failure surfaces as RomM misbehaving rather than as a red check.
+3. **The database is not reachable from outside the package.** There is no exported interface for it and no action that opens a shell to it.
+4. **Saving metadata-provider credentials restarts RomM.** They are delivered as environment variables, which RomM reads only at launch.
+5. **Backups include the ROM library and cannot be scoped to exclude it.**
+
+## Quick Reference for AI Consumers
+
+```yaml
+package_id: romm
+images:
+  romm: rommapp/romm
+  mariadb: built from mariadb.Dockerfile
+architectures: [x86_64, aarch64]
+subcontainers: [romm-app-sub, romm-mariadb-sub]
+volumes:
+  main: /romm, /redis-data
+  database: /var/lib/mysql
+file_models:
+  - store.json
+startos_managed_env_vars:
+  - MARIADB_ROOT_PASSWORD
+  - MARIADB_DATABASE
+  - MARIADB_USER
+  - MARIADB_PASSWORD
+  - DB_HOST
+  - DB_PORT
+  - DB_NAME
+  - DB_USER
+  - DB_PASSWD
+  - ROMM_AUTH_SECRET_KEY
+  - IGDB_CLIENT_ID
+  - IGDB_CLIENT_SECRET
+  - MOBYGAMES_API_KEY
+  - STEAMGRIDDB_API_KEY
+  - ADMIN_USERNAME
+  - ADMIN_EMAIL
+  - ADMIN_PASSWORD
+dependencies: none
+interfaces:
+  ui: { type: ui, port: 8080 }
+actions:
+  - set-admin-password
+  - configure
+tasks:
+  - { action: set-admin-password, severity: critical }
+health_checks:
+  - mariadb
+  - romm
 ```
-
-The package uses `@start9labs/start-sdk` 2.0.9. A release requires installation, login, library import, restart, backup, and restore testing on real StartOS 0.4 hardware for both supported architectures.
-
-## License
-
-RomM and this package are distributed under AGPL-3.0. See [LICENSE](LICENSE).

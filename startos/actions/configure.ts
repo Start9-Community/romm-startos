@@ -2,73 +2,118 @@ import { sdk } from '../sdk'
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 
-const { InputSpec, Value } = sdk
+const { InputSpec, Value, Variants } = sdk
 
-const inputSpec = InputSpec.of({
-  igdbClientId: Value.text({
-    name: i18n('IGDB Client ID'),
-    description: i18n('Optional Twitch application client ID used by IGDB.'),
-    required: false,
-    default: null,
+const disabled = { name: i18n('Disabled'), spec: InputSpec.of({}) }
+
+export const inputSpec = InputSpec.of({
+  igdb: Value.union({
+    name: i18n('IGDB'),
+    description: i18n(
+      'The broadest catalogue, and the one RomM matches against first. Register a Twitch application to get a client ID and secret.',
+    ),
+    default: 'disabled',
+    variants: Variants.of({
+      disabled,
+      enabled: {
+        name: i18n('Enabled'),
+        spec: InputSpec.of({
+          clientId: Value.text({
+            name: i18n('Client ID'),
+            description: null,
+            required: true,
+            default: null,
+          }),
+          clientSecret: Value.text({
+            name: i18n('Client Secret'),
+            description: null,
+            required: true,
+            default: null,
+            masked: true,
+          }),
+        }),
+      },
+    }),
   }),
-  igdbClientSecret: Value.text({
-    name: i18n('IGDB Client Secret'),
-    description: i18n('Optional Twitch application secret used by IGDB.'),
-    required: false,
-    masked: true,
-    default: null,
+  mobygames: Value.union({
+    name: i18n('MobyGames'),
+    description: i18n(
+      'Fills in descriptions and credits IGDB often lacks, for older and more obscure titles.',
+    ),
+    default: 'disabled',
+    variants: Variants.of({
+      disabled,
+      enabled: {
+        name: i18n('Enabled'),
+        spec: InputSpec.of({
+          apiKey: Value.text({
+            name: i18n('API Key'),
+            description: null,
+            required: true,
+            default: null,
+            masked: true,
+          }),
+        }),
+      },
+    }),
   }),
-  mobygamesApiKey: Value.text({
-    name: i18n('MobyGames API Key'),
-    description: i18n('Optional API key used to retrieve MobyGames metadata.'),
-    required: false,
-    masked: true,
-    default: null,
-  }),
-  steamGridDbApiKey: Value.text({
-    name: i18n('SteamGridDB API Key'),
-    description: i18n('Optional API key used to retrieve SteamGridDB artwork.'),
-    required: false,
-    masked: true,
-    default: null,
+  steamgriddb: Value.union({
+    name: i18n('SteamGridDB'),
+    description: i18n(
+      'Artwork only — cover art, logos and heroes for games the other sources matched.',
+    ),
+    default: 'disabled',
+    variants: Variants.of({
+      disabled,
+      enabled: {
+        name: i18n('Enabled'),
+        spec: InputSpec.of({
+          apiKey: Value.text({
+            name: i18n('API Key'),
+            description: null,
+            required: true,
+            default: null,
+            masked: true,
+          }),
+        }),
+      },
+    }),
   }),
 })
 
 export const configure = sdk.Action.withInput(
   'configure',
+
   async () => ({
     name: i18n('Configure Metadata Providers'),
     description: i18n(
-      'Save optional API credentials supported by RomM 5.1.0.',
+      'Choose which games databases RomM looks up cover art and metadata from. Without at least one, a scan finds your files but leaves them bare.',
     ),
-    warning: i18n(
-      'Saved values are passed to RomM after the service is restarted. Leave a field blank to remove it.',
-    ),
+    warning: i18n('Saving restarts RomM.'),
     allowedStatuses: 'any',
     group: null,
     visibility: 'enabled',
   }),
+
   inputSpec,
-  async () => ({
-    igdbClientId: null,
-    igdbClientSecret: null,
-    mobygamesApiKey: null,
-    steamGridDbApiKey: null,
-  }),
+
+  async () => {
+    const store = await storeJson.read().once()
+    return {
+      igdb: store?.igdb ?? undefined,
+      mobygames: store?.mobygames ?? undefined,
+      steamgriddb: store?.steamgriddb ?? undefined,
+    }
+  },
+
+  // main.ts reads the store reactively, so writing it restarts RomM on its own.
   async ({ effects, input }) => {
-    await storeJson.merge(effects, {
-      igdbClientId: input.igdbClientId ?? '',
-      igdbClientSecret: input.igdbClientSecret ?? '',
-      mobygamesApiKey: input.mobygamesApiKey ?? '',
-      steamGridDbApiKey: input.steamGridDbApiKey ?? '',
-    })
+    await storeJson.merge(effects, input)
 
     return {
       version: '1',
-      title: i18n('Configuration Saved'),
-      message: i18n(
-        'Restart RomM to apply the metadata provider configuration.',
-      ),
+      title: i18n('Metadata Providers Saved'),
+      message: i18n('RomM is restarting with the providers you selected.'),
       result: null,
     }
   },
