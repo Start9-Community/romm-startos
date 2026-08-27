@@ -15,6 +15,7 @@ const shape = z.looseObject({
   databasePassword: z.string().optional().catch(undefined),
   authSecret: z.string().optional().catch(undefined),
   adminPassword: z.string().optional().catch(undefined),
+  primaryUrl: z.string().optional().catch(undefined),
   igdb: provider({ clientId: z.string(), clientSecret: z.string() }),
   mobygames: provider({ apiKey: z.string() }),
   steamgriddb: provider({ apiKey: z.string() }),

@@ -37,6 +37,14 @@ const dict = {
   'Artwork only — cover art, logos and heroes for games the other sources matched.': 33,
   'Metadata Providers Saved': 34,
   'RomM is restarting with the providers you selected.': 35,
+  URL: 36,
+  'No RomM interface URL is currently available.': 37,
+  'Set Primary URL': 38,
+  'Choose the URL RomM should use for browser-facing links and redirects.': 39,
+  'Primary URL Saved': 40,
+  'RomM will use ${url} for browser-facing links and redirects.': 41,
+  'No RomM interface URL is available. Enable an address, then select a Primary URL.': 42,
+  'The selected Primary URL is no longer available. Choose another URL.': 43,
 } as const
 
 export type I18nKey = keyof typeof dict

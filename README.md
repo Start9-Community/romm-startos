@@ -67,13 +67,13 @@ One model, holding StartOS-side state rather than upstream configuration.
 
 | Model        | File              | Seeded                                    | Rewritten       |
 | ------------ | ----------------- | ----------------------------------------- | --------------- |
-| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By both actions |
+| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By all three actions |
 
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
 
 RomM itself has no configuration file the package owns. Everything the package asserts is delivered as an environment variable and re-applied on every start, so a value changed inside RomM that also appears in that list does not survive a restart. `store.json` is what makes the provider credentials survive one.
 
-**`main` reads the store reactively**, so writing it restarts the service — which is how both actions take effect, and why neither asks the user to restart anything.
+**`main` reads the store reactively**, so writing it restarts the service. This is how all three actions take effect without asking the user to restart anything.
 
 Because `main` is mounted whole, `store.json` is visible to RomM at `/romm/store.json`.
 
@@ -91,6 +91,8 @@ One HTTP interface. MariaDB is reachable only inside the package's own network n
 
 RomM authenticates its own users; the interface adds no authentication of its own.
 
+The package stores a Primary URL chosen from the currently exported interface addresses and passes it to RomM as `ROMM_BASE_URL`. StartOS terminates browser-facing TLS and forwards HTTP internally on port `8080`. If the selected address disappears, StartOS raises a recoverable task and RomM continues without `ROMM_BASE_URL` until another address is selected.
+
 ## Installation and First-Run Flow
 
 Install generates the database passwords and the session secret, then raises a `critical` task pointing at **Set Admin Password**. RomM will not start until that has been run, so the credential exists and has been shown to the user before the service comes up.
@@ -101,7 +103,7 @@ On first start MariaDB initialises its data directory, the `database-grants` one
 
 ## Actions
 
-Two actions.
+Three actions.
 
 ### Set Admin Password
 
@@ -124,6 +126,13 @@ A rotation authenticates as the admin with the password in `store.json` and call
 - **Outputs** — none.
 
 Each provider is a disabled/enabled union, so its credentials are asked for only when it is turned on, and turning one off is a single choice rather than a set of fields to blank.
+
+### Set Primary URL
+
+- **When to run it**: after enabling the browser-facing interface address, and whenever that address changes.
+- **What it changes**: stores one currently exported URL and passes it to RomM as `ROMM_BASE_URL`.
+- **Cost**: writing the store restarts RomM so generated links and invite URLs use the new address.
+- **Recovery**: if the saved address disappears, StartOS creates an important task while leaving RomM able to start.
 
 ## Tasks
 
@@ -191,6 +200,7 @@ startos_managed_env_vars:
   - DB_USER
   - DB_PASSWD
   - ROMM_AUTH_SECRET_KEY
+  - ROMM_BASE_URL
   - IGDB_CLIENT_ID
   - IGDB_CLIENT_SECRET
   - MOBYGAMES_API_KEY
@@ -204,8 +214,10 @@ interfaces:
 actions:
   - set-admin-password
   - configure
+  - set-primary-url
 tasks:
   - { action: set-admin-password, severity: critical }
+  - { action: set-primary-url, severity: important, conditional: true }
 health_checks:
   - mariadb
   - romm

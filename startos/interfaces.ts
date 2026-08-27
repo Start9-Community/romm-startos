@@ -1,6 +1,6 @@
 import { sdk } from './sdk'
 import { i18n } from './i18n'
-import { uiHostId, uiPort } from './utils'
+import { uiHostId, uiInterfaceId, uiPort } from './utils'
 
 export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
   const host = sdk.MultiHost.of(effects, uiHostId)
@@ -10,7 +10,7 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
   })
   const ui = sdk.createInterface(effects, {
     name: i18n('RomM Web Interface'),
-    id: 'ui',
+    id: uiInterfaceId,
     description: i18n('Browse, scan, and manage your game library'),
     type: 'ui',
     masked: false,
