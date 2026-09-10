@@ -36,12 +36,12 @@ Two images run, one of them ours.
 
 | Image     | Source                                                                       | Entrypoint           |
 | --------- | ---------------------------------------------------------------------------- | -------------------- |
-| `romm`    | `rommapp/romm:5.2.0@sha256:3512f2ca455782f90247271bed23116e6bc675bc74e379be2c41696e607ab11e` | Upstream's, as PID 1 |
+| `romm`    | Upstream `rommapp/romm` all-in-one, unmodified, pinned by digest | Upstream's, as PID 1 |
 | `mariadb` | `mariadb.Dockerfile` — the official MariaDB image plus five command symlinks | Upstream's, as PID 1 |
 
 Both build for `x86_64` and `aarch64`.
 
-The MariaDB image exists only because `sdk.Backups.withMysqlDump` invokes `mysqld`, `mysqladmin`, `mysqldump`, `mysql` and `mysql_install_db`, which MariaDB 11 no longer installs under those names. Nothing else about the image is changed, and the daemon runs upstream's own entrypoint.
+The MariaDB image exists only because `sdk.Backups.withMysqlDump` invokes `mysqld`, `mysqladmin`, `mysqldump`, `mysql` and `mysql_install_db`, which the upstream image no longer installs under those names. Nothing else about the image is changed, and the daemon runs upstream's own entrypoint.
 
 The upstream RomM image is itself a supervisor: behind its single entrypoint it runs the web server, its own Valkey instance, the schema migrator, the filesystem watcher, and the background worker and scheduler. The package does not address those individually.
 
@@ -67,13 +67,13 @@ One model, holding StartOS-side state rather than upstream configuration.
 
 | Model        | File              | Seeded                                    | Rewritten       |
 | ------------ | ----------------- | ----------------------------------------- | --------------- |
-| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By all three actions |
+| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By all three actions and automatic initial URL selection |
 
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
 
 RomM itself has no configuration file the package owns. Everything the package asserts is delivered as an environment variable and re-applied on every start, so a value changed inside RomM that also appears in that list does not survive a restart. `store.json` is what makes the provider credentials survive one.
 
-RomM runs with `SCAN_WORKERS=2` and `WEB_SERVER_CONCURRENCY=3`, matching upstream's recommended one-CPU container defaults for scan throughput and API responsiveness.
+The selected Primary URL is also stored here. When it is unset, the address watcher saves an available interface URL automatically. After that, **Set Primary URL** owns the choice, including when an address disappears.
 
 **`main` reads the store reactively**, so writing it restarts the service. This is how all three actions take effect without asking the user to restart anything.
 
@@ -93,7 +93,7 @@ One HTTP interface. MariaDB is reachable only inside the package's own network n
 
 RomM authenticates its own users; the interface adds no authentication of its own.
 
-The package stores a Primary URL chosen from the currently exported interface addresses and passes it to RomM as `ROMM_BASE_URL`. StartOS terminates browser-facing TLS and forwards HTTP internally on port `8080`. If the selected address disappears, StartOS raises a recoverable task and RomM continues without `ROMM_BASE_URL` until another address is selected.
+The package stores a Primary URL chosen from the currently exported interface addresses and passes it to RomM as `ROMM_BASE_URL` for invite and password-reset links. StartOS terminates browser-facing TLS and forwards HTTP internally on port `8080`. If the selected address disappears, StartOS raises an important task while RomM keeps using the saved URL. Once a URL is saved, other address changes do not restart RomM; selecting a different Primary URL does.
 
 ## Installation and First-Run Flow
 
@@ -109,11 +109,11 @@ Three actions.
 
 ### Set Admin Password
 
-- **When to run it** — at install, prompted by the task; afterwards to rotate the password, including after losing it.
-- **What it changes** — generates a new random password and writes it to `store.json`. On a rotation it also applies it to the running application.
-- **Cost** — writing the store restarts RomM, so the interface is briefly unavailable. Every open session is invalidated.
-- **Repeat safety** — safe to repeat, and never a no-op: each run mints a new password and discards the previous one.
-- **Outputs** — the username and the new password, shown once.
+- **When to run it**: at install, prompted by the task; afterwards to rotate the password, including after losing it.
+- **What it changes**: generates a new random password and writes it to `store.json`. On a rotation it also applies it to the running application.
+- **Cost**: writing the store restarts RomM, so the interface is briefly unavailable. Every open session is invalidated.
+- **Repeat safety**: safe to repeat, and never a no-op: each run mints a new password and discards the previous one.
+- **Outputs**: the username and the new password, shown once.
 
 **Its `allowedStatuses` changes with the package's state, which is deliberate.** Before any password exists it is `only-stopped`, because the first one is applied by the `admin-account` oneshot on the next start. Once one exists it is `only-running`, because a later change goes through RomM's API.
 
@@ -121,30 +121,34 @@ A rotation authenticates as the admin with the password in `store.json` and call
 
 ### Configure Metadata Providers
 
-- **When to run it** — after the first sign-in, and whenever a provider is added, removed, or its credential rotated. RomM works with none of them; scanning just yields bare filenames.
-- **What it changes** — the three provider keys in `store.json`. Nothing else in the file.
-- **Cost** — saving restarts RomM, so the interface is briefly unavailable.
-- **Repeat safety** — fully idempotent. The form is pre-filled with what is already saved.
-- **Outputs** — none.
+- **When to run it**: after the first sign-in, and whenever a provider is added, removed, or its credential rotated. RomM works with none of them; scanning just yields bare filenames.
+- **What it changes**: the three provider keys in `store.json`. Nothing else in the file.
+- **Cost**: saving restarts RomM, so the interface is briefly unavailable.
+- **Repeat safety**: fully idempotent. The form is pre-filled with what is already saved.
+- **Outputs**: none.
 
 Each provider is a disabled/enabled union, so its credentials are asked for only when it is turned on, and turning one off is a single choice rather than a set of fields to blank.
 
 ### Set Primary URL
 
-- **When to run it**: after enabling the browser-facing interface address, and whenever that address changes.
-- **What it changes**: stores one currently exported URL and passes it to RomM as `ROMM_BASE_URL`.
-- **Cost**: writing the store restarts RomM so generated links and invite URLs use the new address.
-- **Recovery**: if the saved address disappears, StartOS creates an important task while leaving RomM able to start.
+- **When to run it**: to choose which available address RomM uses for invite and password-reset links, or to replace an address that no longer works.
+- **What it changes**: stores one currently exported URL in `store.json` and passes it to RomM as `ROMM_BASE_URL`.
+- **Cost**: saving a different URL restarts RomM, so the interface is briefly unavailable.
+- **Repeat safety**: safe to repeat. Selecting the same URL preserves the saved choice.
+- **Outputs**: a confirmation containing the saved URL.
 
 ## Tasks
 
-One task, raised at install and again whenever no password is stored.
+Two tasks cover the administrator password and the Primary URL. Only the password task blocks startup.
 
 | Task                       | Severity   | Raised by                            | Cleared by         |
 | -------------------------- | ---------- | ------------------------------------ | ------------------ |
 | Run **Set Admin Password** | `critical` | Init, whenever no password is stored | Running the action |
+| Run **Set Primary URL** | `important` | No saved URL and no available interface address, or the saved URL is no longer available | Selecting an available URL, the saved address returning, or an address becoming available for automatic initial selection |
 
 `critical` blocks RomM from starting and suspends the ordinary Start/Stop controls, so a user reporting "there are no buttons" is looking at this. The check runs on every init rather than only at install.
+
+The Primary URL watcher runs on init and reacts to address and selection changes. Its task can return whenever the selected address disappears. It is `important` because RomM can run without a base URL; invite and password-reset links may still use a stale saved address until it is restored or replaced.
 
 ## Health Checks
 
@@ -203,8 +207,6 @@ startos_managed_env_vars:
   - DB_PASSWD
   - ROMM_AUTH_SECRET_KEY
   - ROMM_BASE_URL
-  - SCAN_WORKERS
-  - WEB_SERVER_CONCURRENCY
   - IGDB_CLIENT_ID
   - IGDB_CLIENT_SECRET
   - MOBYGAMES_API_KEY
@@ -221,7 +223,7 @@ actions:
   - set-primary-url
 tasks:
   - { action: set-admin-password, severity: critical }
-  - { action: set-primary-url, severity: important, conditional: true }
+  - { action: set-primary-url, severity: important }
 health_checks:
   - mariadb
   - romm

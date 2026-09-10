@@ -7,7 +7,6 @@ import {
   databaseName,
   databasePort,
   databaseUser,
-  getUiUrls,
   mainMountpoint,
   redisMountpoint,
   uiPort,
@@ -67,10 +66,7 @@ echo "created the RomM admin account"
 
 export const main = sdk.setupMain(async ({ effects }) => {
   const store = await storeJson.read().const(effects)
-  const uiUrls = await getUiUrls(effects)
-  const primaryUrl = uiUrls.includes(store?.primaryUrl ?? '')
-    ? store?.primaryUrl
-    : ''
+  const primaryUrl = store?.primaryUrl
   if (
     !store?.databaseRootPassword ||
     !store.databasePassword ||
@@ -161,8 +157,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
           DB_USER: databaseUser,
           DB_PASSWD: store.databasePassword,
           ROMM_AUTH_SECRET_KEY: store.authSecret,
-          SCAN_WORKERS: '2',
-          WEB_SERVER_CONCURRENCY: '3',
           ...(store.igdb?.selection === 'enabled' && {
             IGDB_CLIENT_ID: store.igdb.value.clientId,
             IGDB_CLIENT_SECRET: store.igdb.value.clientSecret,
@@ -173,7 +167,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
           ...(store.steamgriddb?.selection === 'enabled' && {
             STEAMGRIDDB_API_KEY: store.steamgriddb.value.apiKey,
           }),
-          ...(primaryUrl ? { ROMM_BASE_URL: primaryUrl } : {}),
+          ...(primaryUrl && { ROMM_BASE_URL: primaryUrl }),
         },
       },
       ready: {

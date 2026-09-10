@@ -12,7 +12,7 @@ const inputSpec = InputSpec.of({
     return {
       name: i18n('URL'),
       values: Object.fromEntries(urls.map((url) => [url, url])),
-      default: getPreferredUiUrl(urls),
+      default: '',
       disabled:
         urls.length > 0
           ? false
@@ -26,7 +26,7 @@ export const setPrimaryUrl = sdk.Action.withInput(
   async () => ({
     name: i18n('Set Primary URL'),
     description: i18n(
-      'Choose the URL RomM should use for browser-facing links and redirects.',
+      'Choose the URL RomM should use for invite and password-reset links.',
     ),
     warning: null,
     allowedStatuses: 'any',
@@ -57,7 +57,7 @@ export const setPrimaryUrl = sdk.Action.withInput(
       version: '1',
       title: i18n('Primary URL Saved'),
       message: i18n(
-        'RomM will use ${url} for browser-facing links and redirects.',
+        'RomM will use ${url} for invite and password-reset links.',
         { url: input.url },
       ),
       result: null,
