@@ -32,13 +32,13 @@ Everything happens here: browsing and searching the collection, editing what a s
 
 ### Actions
 
-- **Set Admin Password**: generates a new password for the `admin` account and shows it once. Run it again whenever you want a fresh password or have lost the one you had; RomM restarts to apply it, and everyone signed in is signed out.
+- **Set Admin Password** — generates a new password for the `admin` account and shows it once. Run it again whenever you want a fresh password or have lost the one you had; RomM restarts to apply it, and everyone signed in is signed out.
 
   If you change the `admin` password from inside RomM instead, this action can no longer replace it — StartOS no longer knows the current one, and the action will tell you so. Use RomM's own profile page from then on.
 
-- **Configure Metadata Providers**: turns each of IGDB, MobyGames, and SteamGridDB on or off, asking for that provider's credentials only when you turn it on. IGDB covers the most ground and is the one to start with; MobyGames fills in descriptions for older titles, and SteamGridDB adds artwork. All three are free to sign up for. Saving restarts RomM.
+- **Configure Metadata Providers** — turns each of IGDB, MobyGames, and SteamGridDB on or off, asking for that provider's credentials only when you turn it on. IGDB covers the most ground and is the one to start with; MobyGames fills in descriptions for older titles, and SteamGridDB adds artwork. All three are free to sign up for. Saving restarts RomM.
 
-- **Set Primary URL**: chooses the address RomM uses for invite and password-reset links. Saving a different address restarts RomM. If the saved address disappears, StartOS prompts you to choose another one. RomM keeps running, but new links keep using the saved address until you replace it or restore that address.
+- **Set Primary URL** — chooses the address RomM uses for invite and password-reset links. Saving a different address restarts RomM. If the saved address disappears, StartOS prompts you to choose another one. RomM keeps running, but new links keep using the saved address until you replace it or restore that address.
 
 ## Limitations
 

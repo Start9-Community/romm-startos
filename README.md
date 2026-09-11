@@ -36,7 +36,7 @@ Two images run, one of them ours.
 
 | Image     | Source                                                                       | Entrypoint           |
 | --------- | ---------------------------------------------------------------------------- | -------------------- |
-| `romm`    | Upstream `rommapp/romm` all-in-one, unmodified, pinned by digest | Upstream's, as PID 1 |
+| `romm`    | Upstream `rommapp/romm` all-in-one, unmodified, pinned by digest             | Upstream's, as PID 1 |
 | `mariadb` | `mariadb.Dockerfile` — the official MariaDB image plus five command symlinks | Upstream's, as PID 1 |
 
 Both build for `x86_64` and `aarch64`.
@@ -65,8 +65,8 @@ The library is under `main`, so it is part of every backup. On a large collectio
 
 One model, holding StartOS-side state rather than upstream configuration.
 
-| Model        | File              | Seeded                                    | Rewritten       |
-| ------------ | ----------------- | ----------------------------------------- | --------------- |
+| Model        | File              | Seeded                                    | Rewritten                                                |
+| ------------ | ----------------- | ----------------------------------------- | -------------------------------------------------------- |
 | `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By all three actions and automatic initial URL selection |
 
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
@@ -109,11 +109,11 @@ Three actions.
 
 ### Set Admin Password
 
-- **When to run it**: at install, prompted by the task; afterwards to rotate the password, including after losing it.
-- **What it changes**: generates a new random password and writes it to `store.json`. On a rotation it also applies it to the running application.
-- **Cost**: writing the store restarts RomM, so the interface is briefly unavailable. Every open session is invalidated.
-- **Repeat safety**: safe to repeat, and never a no-op: each run mints a new password and discards the previous one.
-- **Outputs**: the username and the new password, shown once.
+- **When to run it** — at install, prompted by the task; afterwards to rotate the password, including after losing it.
+- **What it changes** — generates a new random password and writes it to `store.json`. On a rotation it also applies it to the running application.
+- **Cost** — writing the store restarts RomM, so the interface is briefly unavailable. Every open session is invalidated.
+- **Repeat safety** — safe to repeat, and never a no-op: each run mints a new password and discards the previous one.
+- **Outputs** — the username and the new password, shown once.
 
 **Its `allowedStatuses` changes with the package's state, which is deliberate.** Before any password exists it is `only-stopped`, because the first one is applied by the `admin-account` oneshot on the next start. Once one exists it is `only-running`, because a later change goes through RomM's API.
 
@@ -121,30 +121,30 @@ A rotation authenticates as the admin with the password in `store.json` and call
 
 ### Configure Metadata Providers
 
-- **When to run it**: after the first sign-in, and whenever a provider is added, removed, or its credential rotated. RomM works with none of them; scanning just yields bare filenames.
-- **What it changes**: the three provider keys in `store.json`. Nothing else in the file.
-- **Cost**: saving restarts RomM, so the interface is briefly unavailable.
-- **Repeat safety**: fully idempotent. The form is pre-filled with what is already saved.
-- **Outputs**: none.
+- **When to run it** — after the first sign-in, and whenever a provider is added, removed, or its credential rotated. RomM works with none of them; scanning just yields bare filenames.
+- **What it changes** — the three provider keys in `store.json`. Nothing else in the file.
+- **Cost** — saving restarts RomM, so the interface is briefly unavailable.
+- **Repeat safety** — fully idempotent. The form is pre-filled with what is already saved.
+- **Outputs** — none.
 
 Each provider is a disabled/enabled union, so its credentials are asked for only when it is turned on, and turning one off is a single choice rather than a set of fields to blank.
 
 ### Set Primary URL
 
-- **When to run it**: to choose which available address RomM uses for invite and password-reset links, or to replace an address that no longer works.
-- **What it changes**: stores one currently exported URL in `store.json` and passes it to RomM as `ROMM_BASE_URL`.
-- **Cost**: saving a different URL restarts RomM, so the interface is briefly unavailable.
-- **Repeat safety**: safe to repeat. Selecting the same URL preserves the saved choice.
-- **Outputs**: a confirmation containing the saved URL.
+- **When to run it** — to choose which available address RomM uses for invite and password-reset links, or to replace an address that no longer works.
+- **What it changes** — stores one currently exported URL in `store.json` and passes it to RomM as `ROMM_BASE_URL`.
+- **Cost** — saving a different URL restarts RomM, so the interface is briefly unavailable.
+- **Repeat safety** — safe to repeat. Selecting the same URL preserves the saved choice.
+- **Outputs** — a confirmation containing the saved URL.
 
 ## Tasks
 
 Two tasks cover the administrator password and the Primary URL. Only the password task blocks startup.
 
-| Task                       | Severity   | Raised by                            | Cleared by         |
-| -------------------------- | ---------- | ------------------------------------ | ------------------ |
-| Run **Set Admin Password** | `critical` | Init, whenever no password is stored | Running the action |
-| Run **Set Primary URL** | `important` | No saved URL and no available interface address, or the saved URL is no longer available | Selecting an available URL, the saved address returning, or an address becoming available for automatic initial selection |
+| Task                       | Severity    | Raised by                                                                                | Cleared by                                                                                                                |
+| -------------------------- | ----------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Run **Set Admin Password** | `critical`  | Init, whenever no password is stored                                                     | Running the action                                                                                                        |
+| Run **Set Primary URL**    | `important` | No saved URL and no available interface address, or the saved URL is no longer available | Selecting an available URL, the saved address returning, or an address becoming available for automatic initial selection |
 
 `critical` blocks RomM from starting and suspends the ordinary Start/Stop controls, so a user reporting "there are no buttons" is looking at this. The check runs on every init rather than only at install.
 
