@@ -15,7 +15,7 @@ export const manifest = setupManifest({
     romm: {
       source: {
         dockerTag:
-          'rommapp/romm:5.1.0@sha256:ce9d86ab531e09fede45d00f426e3bf2d1f5dd14846f94d6360d77a92a413028',
+          'rommapp/romm:5.2.0@sha256:3512f2ca455782f90247271bed23116e6bc675bc74e379be2c41696e607ab11e',
       },
       arch: ['x86_64', 'aarch64'],
     },

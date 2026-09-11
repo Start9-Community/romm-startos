@@ -23,5 +23,7 @@ This package runs the official `rommapp/romm` all-in-one image unmodified, along
   ```
 
 - Compare upstream's `docker-compose` example against `startos/main.ts`. RomM delivers its whole configuration through environment variables, so a renamed or added variable is the failure mode to look for — nothing on disk records it.
+- Verify the selected `ROMM_BASE_URL` appears in generated invite and password-reset links.
+- Confirm the new image index contains native `linux/amd64` and `linux/arm64` manifests.
 - Confirm the mount points `/romm` and `/redis-data` are still the paths the image uses, and that RomM still reaches its database over TCP as `romm@127.0.0.1`.
 - Install over an existing install and watch the first start: RomM applies its own schema migrations at boot, and their output is in the `romm` daemon's logs.

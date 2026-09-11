@@ -19,9 +19,10 @@ RomM signs users in with a username and password. StartOS creates the first acco
 1. Run **Set Admin Password** and save the username and password it gives you. RomM will not start until you have, which is why it is the only thing you can press at first.
 2. Start RomM and wait for both **Database** and **Web Interface** to go green. The first start takes several minutes while the database initialises and your account is created.
 3. Open the **RomM Web Interface** and sign in with those credentials.
-4. Run **Configure Metadata Providers** and turn on at least one. Without one, a scan finds your files but leaves them with no cover art or descriptions.
-5. Add your ROM files under `library/`, one folder per console, using the folder names on the Supported Platforms page of the upstream documentation. Start with a handful of files before copying a large collection.
-6. Run a scan from RomM's **Library** screen and check that the games come back with cover art.
+4. Run **Set Primary URL** and select the address RomM should use for invite and password-reset links. Prefer an HTTPS address.
+5. Run **Configure Metadata Providers** and turn on at least one. Without one, a scan finds your files but leaves them with no cover art or descriptions.
+6. Add your ROM files under `library/`, one folder per console, using the folder names on the Supported Platforms page of the upstream documentation. Start with a handful of files before copying a large collection.
+7. Run a scan from RomM's **Library** screen and check that the games come back with cover art.
 
 ## Using RomM
 
@@ -31,11 +32,13 @@ Everything happens here: browsing and searching the collection, editing what a s
 
 ### Actions
 
-- **Set Admin Password** — generates a new password for the `admin` account and shows it once. Run it again whenever you want a fresh password or have lost the one you had; RomM restarts to apply it, and everyone signed in is signed out.
+- **Set Admin Password**: generates a new password for the `admin` account and shows it once. Run it again whenever you want a fresh password or have lost the one you had; RomM restarts to apply it, and everyone signed in is signed out.
 
   If you change the `admin` password from inside RomM instead, this action can no longer replace it — StartOS no longer knows the current one, and the action will tell you so. Use RomM's own profile page from then on.
 
-- **Configure Metadata Providers** — turns each of IGDB, MobyGames, and SteamGridDB on or off, asking for that provider's credentials only when you turn it on. IGDB covers the most ground and is the one to start with; MobyGames fills in descriptions for older titles, and SteamGridDB adds artwork. All three are free to sign up for. Saving restarts RomM.
+- **Configure Metadata Providers**: turns each of IGDB, MobyGames, and SteamGridDB on or off, asking for that provider's credentials only when you turn it on. IGDB covers the most ground and is the one to start with; MobyGames fills in descriptions for older titles, and SteamGridDB adds artwork. All three are free to sign up for. Saving restarts RomM.
+
+- **Set Primary URL**: chooses the address RomM uses for invite and password-reset links. Saving a different address restarts RomM. If the saved address disappears, StartOS prompts you to choose another one. RomM keeps running, but new links keep using the saved address until you replace it or restore that address.
 
 ## Limitations
 
