@@ -4,14 +4,18 @@
     "build": "rm -rf ./javascript && ncc build startos/index.ts -o ./javascript",
     "prettier": "prettier --write startos",
     "check": "tsc --noEmit && tsc -p tests/tsconfig.json",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:runtime": "node --experimental-strip-types --test tests/runtime.integration.ts"
   },
   "dependencies": {
     "@start9labs/start-sdk": "2.0.9",
+    "filebrowser-startos": "https://codeload.github.com/Start9Labs/filebrowser-quantum-startos/tar.gz/85efa61414a84e40fd24b4d70f9b7919357b672a",
+    "nextexplorer-startos": "https://codeload.github.com/Start9Labs/nextexplorer-startos/tar.gz/853598c02f5604fb5f092420e68e7a7e68a50720",
     "yaml": "2.9.0"
   },
   "overrides": {
-    "@start9labs/start-sdk": "$@start9labs/start-sdk"
+    "@start9labs/start-sdk": "$@start9labs/start-sdk",
+    "filebrowser-startos": "$filebrowser-startos"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

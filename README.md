@@ -49,7 +49,7 @@ Two subcontainers run, `romm-app-sub` and `romm-mariadb-sub`. Attach with `start
 
 ## Volume and Data Layout
 
-Two volumes, one for the library and one for the database.
+Two private volumes are always present. Internal storage is the default.
 
 | Volume     | Mount point      | Contents                                                                    |
 | ---------- | ---------------- | --------------------------------------------------------------------------- |
@@ -59,31 +59,37 @@ Two volumes, one for the library and one for the database.
 
 `main` is mounted whole rather than one subdirectory at a time because RomM hardlinks between its library and asset directories, which only works while both sit on one filesystem. The second mount is not a copy — `redis-data/` is one directory reachable at two paths, because Valkey's data path is fixed outside `/romm`.
 
-The library is under `main`, so it is part of every backup. On a large collection that is the dominant cost.
+**Configure Library Storage** can copy the library into a dedicated folder in NextExplorer or File Browser, including FileBrowser Quantum. The selected `data:<folder>` is mounted whole at `/romm`, with `library/`, `assets/`, `resources/` and `launchbox/` together on one mount. This preserves hardlinks between the library and assets. `main:config` and `main:sync` are mounted over their private paths at `/romm/config` and `/romm/sync`; the database, `store.json` and Redis data stay private. Rebuildable ZIP caches are not copied.
+
+Shared files are owned by UID/GID 1000 for the file manager. The external mount maps filesystem UID/GID 1000 to RomM's root user, so new RomM uploads stay writable in the file manager. Media files are readable by nginx's worker user. The mapping is restricted to the chosen folder.
+
+Returning to internal storage copies the active files into a fresh `main:storage/romm-<uuid>` folder mounted at the same `/romm` path. Previous copies are retained. Internal files, including retained copies, remain part of RomM backups. Active files in a file manager must be backed up with that service.
 
 ## File Models
 
-One model holds StartOS-side state. RomM's private YAML configuration records the filesystem structure required by version 5.3.0.
+The JSON store holds StartOS state. The package also initializes and migrates RomM's private YAML configuration for the explicit filesystem layout required by RomM 5.3.0.
 
 | Model        | File              | Seeded                                    | Rewritten                                                |
 | ------------ | ----------------- | ----------------------------------------- | -------------------------------------------------------- |
-| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By all three actions and automatic initial URL selection |
+| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By all four actions and automatic initial URL selection |
 
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
 
-`main:config/config.yml` records the upstream filesystem structure. A fresh library uses `roms/{platform}/{game}` and `bios/{platform}`. On upgrade, the package detects the existing top-level or platform-first layout, preserves configured folder names and unrelated settings, and keeps a `config.yml.pre-5.3.0` copy before rewriting an existing configuration.
+`main:config/config.yml` records the upstream filesystem structure. A fresh library uses `roms/{platform}/{game}` and `bios/{platform}`. Upgrade detects the existing top-level or platform-first folder layout, preserving configured folder names and unrelated settings. An existing explicit structure is retained. Before rewriting an existing configuration, the migration keeps `config.yml.pre-5.3.0` beside it.
 
 Database access, provider credentials and the Primary URL are passed as environment variables on every start. `store.json` preserves the provider credentials across restarts.
 
 The selected Primary URL is also stored here. When it is unset, the address watcher saves an available interface URL automatically. After that, **Set Primary URL** owns the choice, including when an address disappears.
 
-**`main` reads the store reactively**, so writing it restarts the service. This is how all three actions take effect without asking the user to restart anything.
+The `libraryStorage` selection is absent on existing and fresh installations, preserving the original internal layout. After a successful copy it records the selected service and folder, or a new internal folder. `storageMigration` records a queued copy and its source snapshot, destination and any error. A malformed selection fails validation instead of falling back to a different library.
 
-Because `main` is mounted whole, `store.json` is visible to RomM at `/romm/store.json`.
+**`main` reads the store reactively**, so configuration changes take effect on restart. Storage changes are queued while stopped; starting RomM runs the copy before starting its database and web interface.
+
+With the original internal layout, `store.json` is visible to RomM at `/romm/store.json`. Storage copies exclude it, and it is never shared with the file manager.
 
 ## Dependencies
 
-None.
+NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Quantum flavor) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running for RomM to access the files. Internal storage needs neither service.
 
 ## Network Access and Interfaces
 
@@ -107,7 +113,7 @@ On first start MariaDB initialises its data directory, the `database-grants` one
 
 ## Actions
 
-Three actions.
+Four actions.
 
 ### Set Admin Password
 
@@ -138,6 +144,18 @@ Each provider is a disabled/enabled union, so its credentials are asked for only
 - **Cost** — saving a different URL restarts RomM, so the interface is briefly unavailable.
 - **Repeat safety** — safe to repeat. Selecting the same URL preserves the saved choice.
 - **Outputs** — a confirmation containing the saved URL.
+
+### Configure Library Storage
+
+Run this action while RomM is stopped. Select internal storage, NextExplorer, or File Browser. For a file manager, enter one empty folder name containing only letters, numbers, hyphens and underscores, beginning with a letter or number. The default is `RomM`; it appears as a NextExplorer drive or a File Browser folder.
+
+The action queues a copy and returns immediately. On the next Start, a dedicated `library-storage-copy` oneshot copies the active library, artwork and assets before starting either MariaDB or RomM. The copy belongs to the service lifecycle, so Stop and backups interrupt it. It is not limited by the short action execution timeout.
+
+The copy preserves source files and hardlinks and refuses nonempty destinations, symlinks and special files. It checks free space first, rechecks source files and directories for changes before completion, and reports errors without changing the active storage selection. Do not edit files in either application while copying. A failed or interrupted copy can leave partial destination files; stop RomM and choose another empty folder to retry, or select the current storage to cancel the queued change.
+
+After copying succeeds, the package switches the active storage and automatically starts the application. Returning to internal storage creates a new private folder, preserving any older internal copy. Selecting the current location cancels a pending copy and otherwise leaves the library unchanged. Run a scan after reorganizing game folders.
+
+Every completed copy carries a `.romm-storage` marker. Startup checks this marker before using a selected storage folder. Keep it with the folder in backups and restores. Missing storage or an incomplete restore produces an error instead of starting against an empty library.
 
 ## Tasks
 
@@ -171,17 +189,17 @@ The strategy is mixed, and the difference matters: `main` is copied wholesale, w
 
 That last point is why `database-grants` exists — the accounts the restore leaves behind are not the ones RomM connects as, nor the ones its views and triggers name as definer. The oneshot repairs both on the first start after a restore, with the passwords carried over in `store.json`.
 
-Nothing is excluded from the backup, so it includes the ROM library. Check the destination has room before running one, and keep an independent copy of anything irreplaceable — the library is the one thing here that cannot be rebuilt.
+With internal storage, the backup includes the active ROM library, artwork and retained internal copies. With shared storage, RomM's backup includes its database, credentials, private configuration and selected folder, but not the active files held by the file manager. Older internal copies can still increase the size of that backup.
 
-A restored instance is usable straight away: the accounts, the library, and the artwork all come back, and the administrator password is the one that was in use when the backup was taken.
+Complete or cancel any queued storage copy before backing up. For shared storage, keep RomM stopped while backing up both RomM and the selected file manager, and avoid file-manager edits until both backups complete. Restore both matching backups, including the selected folder and its `.romm-storage` marker, before starting RomM. Restoring RomM alone does not restore the current shared library. The administrator password is the one in use when the RomM backup was taken.
 
 ## Limitations and Differences
 
-1. **The whole `main` volume is one mount, so the library cannot be pointed at separate storage.** Upstream supports mounting `library/` from elsewhere; here it must live with the rest of RomM's data, because RomM hardlinks across those directories.
+1. **Shared storage copies require an empty destination and enough space for a full copy.** Original files are retained, symlinks are rejected, and library and asset directories stay together to preserve hardlinks.
 2. **RomM's bundled Valkey is not reachable or configurable**, and has no health check of its own — a Valkey failure surfaces as RomM misbehaving rather than as a red check.
 3. **The database is not reachable from outside the package.** There is no exported interface for it and no action that opens a shell to it.
 4. **Saving metadata-provider credentials restarts RomM.** They are delivered as environment variables, which RomM reads only at launch.
-5. **Backups include the ROM library and cannot be scoped to exclude it.**
+5. **Shared libraries need matching backups of RomM and the file manager.** RomM's own backup captures private storage and retained internal copies only.
 
 ## Quick Reference for AI Consumers
 
@@ -216,13 +234,16 @@ startos_managed_env_vars:
   - ADMIN_USERNAME
   - ADMIN_EMAIL
   - ADMIN_PASSWORD
-dependencies: none
+dependencies:
+  optional: [nextexplorer, filebrowser]
+  required: active and queued shared storage providers
 interfaces:
   ui: { type: ui, port: 8080 }
 actions:
   - set-admin-password
   - configure
   - set-primary-url
+  - set-library-storage
 tasks:
   - { action: set-admin-password, severity: critical }
   - { action: set-primary-url, severity: important }

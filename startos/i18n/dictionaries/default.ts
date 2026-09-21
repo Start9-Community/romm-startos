@@ -45,6 +45,22 @@ const dict = {
   'RomM will use ${url} for invite and password-reset links.': 41,
   'No RomM interface URL is available. Enable an address, then select a Primary URL.': 42,
   'The selected Primary URL is no longer available. Choose another URL.': 43,
+  Folder: 50,
+  'An empty folder in the file manager. It becomes a drive in NextExplorer.': 51,
+  'Use 1 to 80 letters, numbers, hyphens or underscores, starting with a letter or number.': 52,
+  'Library Storage': 53,
+  'Internal Storage': 54,
+  'Configure Library Storage': 55,
+  'Copy your library and artwork into NextExplorer, File Browser including Quantum, or internal storage. Original files are retained.': 56,
+  'Back up first. The destination needs space for a full copy. Do not edit files during copying. Shared files require a separate backup of the file manager.': 57,
+  'Stop RomM and wait for it to finish stopping before changing storage.': 58,
+  'Library Storage Unchanged': 59,
+  'RomM already uses the selected storage.': 60,
+  'Install the selected file manager before changing storage.': 61,
+  'Library Copy Queued': 62,
+  'The storage copy is queued. Start RomM to copy the files before its web interface starts. Original files will be retained. Stop RomM to interrupt the copy.': 63,
+  'Destination Library Folder': 64,
+  'The pending copy was cancelled. RomM will keep using its current storage. Partial destination files were retained.': 65,
 } as const
 
 export type I18nKey = keyof typeof dict

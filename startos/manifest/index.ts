@@ -26,5 +26,22 @@ export const manifest = setupManifest({
       arch: ['x86_64', 'aarch64'],
     },
   },
-  dependencies: {},
+  dependencies: {
+    nextexplorer: {
+      description: { en_US: 'Optional shared storage for the RomM library.' },
+      optional: true,
+      metadata: {
+        title: 'NextExplorer',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/nextexplorer-startos/853598c02f5604fb5f092420e68e7a7e68a50720/icon.svg',
+      },
+    },
+    filebrowser: {
+      description: { en_US: 'Optional shared storage for the RomM library.' },
+      optional: true,
+      metadata: {
+        title: 'File Browser',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-quantum-startos/85efa61414a84e40fd24b4d70f9b7919357b672a/icon.svg',
+      },
+    },
+  },
 })
