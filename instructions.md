@@ -10,7 +10,7 @@ StartOS creates RomM's administrator account for you. Run **Set Admin Password**
 
 A web library for your game collection. Drop ROM files into a folder per console, run a scan, and RomM matches each file against online games databases to fill in cover art, release dates, descriptions, and box scans — then lets you browse, search, and play the supported ones in the browser.
 
-RomM comes with its own database and cache; nothing else needs installing. Your library, artwork, and database are included in StartOS backups. RomM 5.3.0 requires an explicit library layout. Existing installations keep their detected layout during the upgrade.
+RomM comes with its own database and cache; nothing else needs installing. Your library, artwork, and database are included in StartOS backups. Existing installations keep their detected layout during the upgrade.
 
 RomM signs users in with a username and password. StartOS creates the first account rather than leaving its setup wizard open to whoever reaches the address first.
 

@@ -63,7 +63,7 @@ The library is under `main`, so it is part of every backup. On a large collectio
 
 ## File Models
 
-One model holds StartOS-side state. RomM's private YAML configuration records the filesystem structure required by version 5.3.0.
+One model holds StartOS-side state. RomM's private YAML configuration records the library's filesystem structure.
 
 | Model        | File              | Seeded                                    | Rewritten                                                |
 | ------------ | ----------------- | ----------------------------------------- | -------------------------------------------------------- |
@@ -72,6 +72,8 @@ One model holds StartOS-side state. RomM's private YAML configuration records th
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
 
 `main:config/config.yml` records the upstream filesystem structure. A fresh library uses `roms/{platform}/{game}` and `bios/{platform}`. On upgrade, the package detects the existing top-level or platform-first layout, preserves configured folder names and unrelated settings, and keeps a `config.yml.pre-5.3.0` copy before rewriting an existing configuration.
+
+RomM 5.3.0 still defaults to the standard top-level layout when no structure is configured. It refuses a platform-first library without a template, or a configuration that still sets `filesystem.roms_folder` or `filesystem.firmware_folder`. The migration handles both cases. Fresh installs also record the standard layout explicitly for clarity.
 
 Database access, provider credentials and the Primary URL are passed as environment variables on every start. `store.json` preserves the provider credentials across restarts.
 
