@@ -20,27 +20,16 @@ export const cleanupLibraryStorage = sdk.Action.withInput(
   }),
   sdk.InputSpec.of({
     copy: sdk.Value.dynamicSelect(async () => {
-      const { active, job, privateRoot } = storageState(
-        await storeJson.read().once(),
-      )
+      const { active, job } = storageState(await storeJson.read().once())
       const copies = job
         ? []
-        : await retainedLibraries(
-            sdk.volumes.main.path,
-            active,
-            job,
-            privateRoot,
-          )
+        : await retainedLibraries(sdk.volumes.main.path, active, job)
       return {
         name: i18n('Retained Library'),
         values: Object.fromEntries(
           copies.map((id) => [
             id,
-            id === 'root'
-              ? 'main:library'
-              : id.startsWith('private:')
-                ? `main:private-storage/${id.slice(8)}`
-                : `main:storage/${id}`,
+            id === 'root' ? 'main:library' : `main:storage/${id}`,
           ]),
         ),
         default: '',
@@ -59,16 +48,8 @@ export const cleanupLibraryStorage = sdk.Action.withInput(
           'Stop RomM and wait for it to finish stopping before changing storage.',
         ),
       )
-    const { active, job, privateRoot } = storageState(
-      await storeJson.read().once(),
-    )
-    await removeRetainedLibrary(
-      sdk.volumes.main.path,
-      input.copy,
-      active,
-      job,
-      privateRoot,
-    )
+    const { active, job } = storageState(await storeJson.read().once())
+    await removeRetainedLibrary(sdk.volumes.main.path, input.copy, active, job)
     return {
       version: '1',
       title: i18n('Remove Retained Library'),

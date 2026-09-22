@@ -10,7 +10,7 @@ import {
   rm,
 } from 'node:fs/promises'
 import { join } from 'node:path'
-import { copyStorage, checkStorage } from './storageCopy.ts'
+import { copyStorage, checkStorage, syncStorageDirectory } from './storageCopy'
 
 export async function runStorageCopy(
   source: string,
@@ -25,6 +25,31 @@ export async function runStorageCopy(
   const ownerName = `.romm-copy-job-${id}`
   const owner = join(destination, ownerName)
   const stage = join(destination, `.romm-copy-${id}`)
+  const published = join(destination, '.romm-publish')
+  const marker = join(destination, '.romm-storage')
+  const completion = await lstat(marker).catch(
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return undefined
+      throw error
+    },
+  )
+  async function finish() {
+    await checkStorage(destination)
+    await chown(destination, options.uid, options.gid)
+    await chmod(destination, 0o755)
+    await syncStorageDirectory(destination)
+    await rm(stage, { recursive: true, force: true })
+    await rm(published, { force: true })
+    await rm(owner, { recursive: true, force: true })
+    await syncStorageDirectory(destination)
+  }
+  if (
+    completion?.isFile() &&
+    (await readFile(marker, 'utf8')) === `1\n${id}\n`
+  ) {
+    await finish()
+    return
+  }
   const existing = await lstat(owner).catch((error: NodeJS.ErrnoException) => {
     if (error.code === 'ENOENT') return undefined
     throw error
@@ -38,9 +63,9 @@ export async function runStorageCopy(
         'The destination must be empty; existing files were left unchanged',
       )
     await mkdir(owner, { mode: 0o700 })
+    await syncStorageDirectory(destination)
   }
-  const names = options.directories ?? ['library']
-  const published = join(destination, '.romm-publish')
+  const names = ['library']
   const publication = await lstat(published).catch(
     (error: NodeJS.ErrnoException) => {
       if (error.code === 'ENOENT') return undefined
@@ -74,11 +99,12 @@ export async function runStorageCopy(
           throw new Error('Staged files changed while the copy was interrupted')
         await rename(sourcePath, target)
       }
+      await syncStorageDirectory(stage)
+      await syncStorageDirectory(destination)
     }
-    await checkStorage(destination)
-    await rm(stage, { recursive: true, force: true })
-    await chown(destination, options.uid, options.gid)
-    await chmod(destination, 0o755)
+    if ((await readFile(marker, 'utf8')) !== `1\n${id}\n`)
+      throw new Error('The completion marker belongs to a different copy job')
+    await finish()
     return
   }
   const permitted = new Set([
@@ -93,7 +119,7 @@ export async function runStorageCopy(
   await rm(stage, { recursive: true, force: true })
   await rm(join(destination, `.romm-publish-${id}`), { force: true })
   await mkdir(stage)
-  await copyStorage(source, stage, options)
+  await copyStorage(source, stage, { ...options, completionId: id })
   options.signal?.throwIfAborted()
   const records: Record<string, { dev: number; ino: number }> = {}
   for (const name of [...names, '.romm-storage']) {
@@ -114,5 +140,6 @@ export async function runStorageCopy(
     await file.close()
   }
   await rename(temp, published)
+  await syncStorageDirectory(destination)
   await runStorageCopy(source, destination, id, options)
 }

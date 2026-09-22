@@ -43,34 +43,20 @@ export function mountStorage(
   })
 }
 
-export function libraryMounts(storage: LibraryStorage | undefined) {
-  if (!storage || storage.layout === 'library') {
-    return sdk.Mounts.of()
-      .mountVolume({
-        volumeId: 'main',
-        subpath: null,
-        mountpoint: mainMountpoint,
-        readonly: false,
-      })
-      .mountVolume({
-        volumeId: 'main',
-        subpath: 'redis-data',
-        mountpoint: redisMountpoint,
-        readonly: false,
-      })
-  }
-  return mountStorage(
-    sdk.Mounts.of(),
-    storage,
-    mainMountpoint,
-    false,
-    true,
-  ).mountVolume({
-    volumeId: 'main',
-    subpath: 'redis-data',
-    mountpoint: redisMountpoint,
-    readonly: false,
-  })
+export function libraryMounts() {
+  return sdk.Mounts.of()
+    .mountVolume({
+      volumeId: 'main',
+      subpath: null,
+      mountpoint: mainMountpoint,
+      readonly: false,
+    })
+    .mountVolume({
+      volumeId: 'main',
+      subpath: 'redis-data',
+      mountpoint: redisMountpoint,
+      readonly: false,
+    })
 }
 
 export function selectedLibraryMount(storage: LibraryStorage) {
@@ -82,32 +68,6 @@ export function selectedLibraryMount(storage: LibraryStorage) {
     true,
     true,
   )
-}
-
-export function privateDataMounts(id: string) {
-  let mounts = sdk.Mounts.of()
-  for (const name of ['assets', 'resources', 'launchbox'])
-    mounts = mounts.mountVolume({
-      volumeId: 'main',
-      subpath: `private-storage/${id}/${name}`,
-      mountpoint: `${mainMountpoint}/${name}`,
-      readonly: false,
-    })
-  return mounts
-}
-
-export function privateLibraryMounts() {
-  let mounts = sdk.Mounts.of()
-  for (const subpath of ['config', 'sync']) {
-    mounts = mounts.mountVolume({
-      volumeId: 'main',
-      subpath,
-      mountpoint: `${mainMountpoint}/${subpath}`,
-      readonly: false,
-    })
-  }
-
-  return mounts
 }
 
 export async function checkLibraryStorage(

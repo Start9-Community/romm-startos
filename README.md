@@ -65,8 +65,6 @@ Shared files are owned by UID/GID 1000 for the file manager. The external mount 
 
 Returning to internal storage copies the current library into `main:storage/romm-<uuid>/library`, mounted at `/romm/library`. Previous copies are retained until the user removes them with **Remove Retained Library**. These copies are included in RomM backups until removed. External libraries require the file manager's backup.
 
-Trial installations that shared assets and resources keep their existing mounts until explicitly switched. Choose a new empty folder or internal storage to convert: the copy first saves the current assets, resources and LaunchBox data in `main:private-storage/<job-id>`, then copies only the library. The `privateStorage` field selects that private data on subsequent starts. Conversion retains the old external folder; verify the result before deleting that folder in the file manager.
-
 ## File Models
 
 One model holds StartOS-side state. RomM's private YAML configuration records the library's filesystem structure.
@@ -85,7 +83,7 @@ Database access, provider credentials and the Primary URL are passed as environm
 
 The selected Primary URL is also stored here. When it is unset, the address watcher saves an available interface URL automatically. After that, **Set Primary URL** owns the choice, including when an address disappears.
 
-The `libraryStorage` selection is absent on existing and fresh installations, preserving the original internal layout. Successful copies record a service, folder and `layout: library`. An absent layout identifies the trial whole-folder mount. `storageMigration` records a UUID, source, destination and state. Storage fields remain opaque in the file model and are validated by their consumers: malformed values fail startup explicitly without invalidating credentials or making the recovery action unavailable.
+The `libraryStorage` selection is absent on existing and fresh installations, preserving the original internal layout. Successful copies record a service and folder. `storageMigration` records a UUID, source, destination, state and failure message. Storage fields remain opaque in the file model and are validated by their consumers: malformed values fail startup explicitly without invalidating credentials or making the recovery action unavailable.
 
 Normal startup reads the store reactively. During a copy, `main` subscribes only to `storageMigration`, so unrelated store writes do not abort it. The copy state is persisted before copying starts. Metadata, URL and password actions reject changes while a copy is pending; automatic URL selection waits until it finishes or is cancelled. Storage changes are queued while stopped and copy before the database or web interface starts.
 
@@ -93,7 +91,7 @@ With the library-only layout, `store.json` is visible to RomM at `/romm/store.js
 
 ## Dependencies
 
-NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Quantum flavor) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running or publicly reachable for RomM to access the files. Internal storage needs neither service. File Browser requires `>=2.62.2:1 || >=#quantum:1.0.0:0`.
+NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Quantum flavor) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running or publicly reachable for RomM to access the files. Internal storage needs neither service. File Browser requires `>=2.62.2:1 || >=#quantum:1.0.0:0`; NextExplorer requires `>=2.2.7:0`.
 
 Sibling package dependencies use `github:Start9Labs/<package>#next`, with exact commits pinned in `package-lock.json`. `.npmrc` sets `allow-git=all` for npm 12's Git dependency policy. The Quantum flavor shares the `filebrowser` package ID and volume interface; it does not require a second dependency alias.
 
@@ -119,7 +117,7 @@ On first start MariaDB initialises its data directory, the `database-grants` one
 
 ## Actions
 
-Five actions.
+Seven actions.
 
 ### Set Admin Password
 
@@ -159,17 +157,25 @@ The action queues a copy and returns immediately. On the next Start, a dedicated
 
 A new copy requires an empty destination. It preserves source files and library hardlinks, rejects symlinks and special files, checks free space and rechecks source files and directories before activation. `fs.copyFile` copies each file. Do not edit files in either application during a copy.
 
-A persisted job UUID owns a hidden staging directory. Restarting removes only that job's partial staging data and retries into the same destination; it does not require another empty folder. A publication record allows an interrupted promotion to finish without recopying or overwriting the completed library. Unexpected files or another job's destination are rejected. **Cancel Library Copy** clears the pending job and retains the original selection and partial output. A cancelled job cannot reclaim its old destination automatically: remove its partial files in the file manager or choose a new empty folder. Inactive internal output can be removed with the cleanup action.
+A persisted job UUID owns a hidden staging directory. Restarting after Stop or a reboot retries interrupted work in the same destination, removing only that job's partial staging data. A copy error persists `failed` and its message. Subsequent service starts report the failure without copying again. To retry, stop RomM, fix the reported problem and select the same destination in **Configure Library Storage**; this resets the same job to `pending`.
+
+File contents and metadata, then directories, are flushed before the publication record is written and flushed. A publication record allows an interrupted promotion to finish without recopying or overwriting the completed library. Unexpected files or another job's destination are rejected. Publication flushes the renamed entries before removing the stage, ownership directory and journal. The remaining `.romm-storage` marker carries the job UUID so a restart between publication and saving the active selection can finish without copying again.
 
 After copying succeeds, the package switches the active storage and automatically starts the application. Returning to internal storage creates a new private folder, preserving any older internal copy. Selecting the current location cancels a pending copy and otherwise leaves the library unchanged. Run a scan after reorganizing game folders.
 
-Every completed copy carries a `.romm-storage` marker. Startup checks it before using a selected folder. Keep all hidden `.romm-*` files with the folder in backups. Missing storage or an incomplete restore fails startup explicitly.
+Every completed copy carries a `.romm-storage` marker. Startup checks it before using a selected folder. Keep `.romm-storage` with the folder in backups. Other job files are temporary and are removed after successful publication. Missing storage or an incomplete restore fails startup explicitly.
 
-**Recover Internal Library** selects the retained original `main:library` and clears pending or malformed storage selections without mounting or requiring the missing file manager. Selecting **Internal Storage** also offers this fallback when the shared source cannot be read. Recovery uses the older retained files and excludes changes made in the file manager. If the original was removed, restore a backup first.
+### Recover Internal Library
+
+This stopped-only action selects the retained original `main:library` and clears pending or malformed storage selections without mounting or requiring the missing file manager. The form and result name `main:library` explicitly: it is the original copy, not the most recent retained internal destination. Recovery excludes later changes in the file manager or other retained copies. If the original was removed, restore a backup first. Selecting **Internal Storage** also uses this fallback when the shared source cannot be read.
+
+### Cancel Library Copy
+
+This separate stopped-only action appears only while a copy is queued, interrupted or failed. It clears the job and retains the original selection and partial output. A cancelled job cannot reclaim its old destination automatically: remove its partial files in the file manager or choose a new empty folder. Inactive internal output can be removed with the cleanup action.
 
 ### Remove Retained Library
 
-Run while stopped, after verifying the active library and taking a backup. The action lists inactive managed internal copies, including the original `main:library`, cancelled internal destinations and inactive trial-conversion private snapshots. It refuses active copies, arbitrary paths and all cleanup while a job is pending. Removal is permanent and reduces subsequent backups. Removing the original `main:library` also removes that recovery option. External old folders must be deleted through the file manager. Current private saves, artwork and settings are preserved.
+Run while stopped, after verifying the active library and taking a backup. The action lists inactive managed internal copies, including the original `main:library` and cancelled internal destinations. It refuses active copies, arbitrary paths and all cleanup while a job is pending. Removal is permanent and reduces subsequent backups. Removing the original `main:library` also removes that recovery option. External old folders must be deleted through the file manager. Current private saves, artwork and settings are preserved.
 
 ## Tasks
 
@@ -259,6 +265,8 @@ actions:
   - set-primary-url
   - set-library-storage
   - cleanup-library-storage
+  - recover-library-storage
+  - cancel-library-copy
 tasks:
   - { action: set-admin-password, severity: critical }
   - { action: set-primary-url, severity: important }

@@ -18,6 +18,18 @@ import { join, relative } from 'node:path'
 const directories = ['library']
 const markerName = '.romm-storage'
 
+export async function syncStorageDirectory(path: string) {
+  const directory = await open(
+    path,
+    constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW,
+  )
+  try {
+    await directory.sync()
+  } finally {
+    await directory.close()
+  }
+}
+
 export async function checkStorage(source: string) {
   const root = await lstat(source)
   const marker = join(source, markerName)
@@ -30,9 +42,20 @@ export async function checkStorage(source: string) {
       'The selected storage has not been copied or restored completely',
     )
   }
-  if ((await readFile(marker, 'utf8')) !== '1\n') {
+  const contents = await readFile(marker, 'utf8')
+  if (contents !== '1\n' && !/^1\n[a-f0-9-]{36}\n$/.test(contents)) {
     throw new Error('The selected storage marker is invalid')
   }
+  const library = await lstat(join(source, 'library')).catch(
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return undefined
+      throw error
+    },
+  )
+  if (library && !library.isDirectory())
+    throw new Error(
+      'The selected library must be a directory, not a symbolic link',
+    )
 }
 
 export async function copyStorage(
@@ -43,7 +66,7 @@ export async function copyStorage(
     gid: number
     requireMarker: boolean
     signal?: AbortSignal
-    directories?: string[]
+    completionId?: string
     onProgress?: (progress: {
       files: number
       bytes: number
@@ -51,6 +74,8 @@ export async function copyStorage(
     }) => void | Promise<void>
   },
 ) {
+  if (options.completionId && !/^[a-f0-9-]{36}$/.test(options.completionId))
+    throw new Error('Invalid copy identifier')
   options.signal?.throwIfAborted()
   const sourceInfo = await lstat(source)
   const destinationInfo = await lstat(destination)
@@ -93,7 +118,7 @@ export async function copyStorage(
     }
   }
 
-  for (const name of options.directories ?? directories) {
+  for (const name of directories) {
     const path = join(source, name)
     const info = await lstat(path).catch((error: NodeJS.ErrnoException) => {
       if (error.code === 'ENOENT') return undefined
@@ -181,11 +206,14 @@ export async function copyStorage(
 
   for (const { path, info } of [...entries].reverse()) {
     options.signal?.throwIfAborted()
-    await utimes(
-      join(destination, relative(source, path)),
-      info.atime,
-      info.mtime,
-    )
+    const target = join(destination, relative(source, path))
+    await utimes(target, info.atime, info.mtime)
+    const copied = await open(target, constants.O_RDONLY | constants.O_NOFOLLOW)
+    try {
+      await copied.sync()
+    } finally {
+      await copied.close()
+    }
   }
   for (const { path, info } of entries) {
     options.signal?.throwIfAborted()
@@ -201,7 +229,7 @@ export async function copyStorage(
       )
     }
   }
-  for (const name of options.directories ?? directories) {
+  for (const name of directories) {
     if (!presentDirectories.has(name)) {
       const appeared = await lstat(join(source, name)).catch(
         (error: NodeJS.ErrnoException) => {
@@ -221,12 +249,15 @@ export async function copyStorage(
   options.signal?.throwIfAborted()
   const file = await open(marker, 'wx', 0o644)
   try {
-    await file.writeFile('1\n')
+    await file.writeFile(
+      options.completionId ? `1\n${options.completionId}\n` : '1\n',
+    )
+    await file.chown(options.uid, options.gid)
+    await file.chmod(0o644)
     await file.sync()
   } finally {
     await file.close()
   }
-  await chown(marker, options.uid, options.gid)
-  await chmod(marker, 0o644)
+  await syncStorageDirectory(destination)
   return { files, bytes }
 }

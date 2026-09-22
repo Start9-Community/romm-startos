@@ -14,7 +14,6 @@ export async function retainedLibraries(
   main: string,
   active?: LibraryStorage,
   job?: StorageMigration,
-  privateRoot?: string,
 ) {
   const protectedIds = new Set(
     [active, job?.source, job?.destination]
@@ -36,12 +35,6 @@ export async function retainedLibraries(
     if ((await lstat(join(main, 'storage', name))).isDirectory())
       result.push(name)
   }
-  for (const id of await directories(join(main, 'private-storage'))) {
-    if (!/^[a-f0-9-]{36}$/.test(id) || id === privateRoot || id === job?.id)
-      continue
-    if ((await lstat(join(main, 'private-storage', id))).isDirectory())
-      result.push(`private:${id}`)
-  }
   return result
 }
 
@@ -50,29 +43,20 @@ export async function removeRetainedLibrary(
   id: string,
   active?: LibraryStorage,
   job?: StorageMigration,
-  privateRoot?: string,
 ) {
   if (job)
     throw new Error(
       'Finish or cancel the library copy before removing retained files',
     )
-  if (!(await retainedLibraries(main, active, job, privateRoot)).includes(id))
+  if (!(await retainedLibraries(main, active, job)).includes(id))
     throw new Error(
       'The selected copy is active, missing, or not managed by RomM',
     )
-  const path =
-    id === 'root'
-      ? join(main, 'library')
-      : id.startsWith('private:')
-        ? join(main, 'private-storage', id.slice(8))
-        : join(main, 'storage', id)
+  const path = id === 'root' ? join(main, 'library') : join(main, 'storage', id)
   await rm(path, { recursive: true })
 }
 
-export async function recoverInternalLibrary(
-  main: string,
-  privateStorage?: unknown,
-) {
+export async function recoverInternalLibrary(main: string) {
   const info = await lstat(join(main, 'library')).catch(
     (error: NodeJS.ErrnoException) => {
       if (error.code === 'ENOENT') return undefined
@@ -86,10 +70,5 @@ export async function recoverInternalLibrary(
   return {
     libraryStorage: undefined,
     storageMigration: undefined,
-    privateStorage:
-      typeof privateStorage === 'string' &&
-      /^[a-f0-9-]{36}$/.test(privateStorage)
-        ? privateStorage
-        : undefined,
   }
 }

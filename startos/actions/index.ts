@@ -4,10 +4,14 @@ import { setAdminPassword } from './setAdminPassword'
 import { setPrimaryUrl } from './setPrimaryUrl'
 import { setLibraryStorage } from './setLibraryStorage'
 import { cleanupLibraryStorage } from './cleanupLibraryStorage'
+import { recoverLibraryStorage } from './recoverLibraryStorage'
+import { cancelLibraryCopy } from './cancelLibraryCopy'
 
 export const actions = sdk.Actions.of()
   .addAction(setAdminPassword)
   .addAction(configure)
   .addAction(setPrimaryUrl)
   .addAction(setLibraryStorage)
+  .addAction(recoverLibraryStorage)
+  .addAction(cancelLibraryCopy)
   .addAction(cleanupLibraryStorage)

@@ -24,7 +24,7 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
           versionRange:
             storage!.location === 'filebrowser'
               ? '>=2.62.2:1 || >=#quantum:1.0.0:0'
-              : '*',
+              : '>=2.2.7:0',
           healthChecks: [],
         },
       ]),

@@ -1,15 +1,23 @@
 import { type T } from '@start9labs/start-sdk'
-import { mkdir } from 'node:fs/promises'
 import { storeJson } from './fileModels/store.json'
 import { sdk } from './sdk'
 import { mountStorage, type StorageMigration } from './storage'
 import { runStorageCopy } from './storageJob'
 import { i18n } from './i18n'
+import { storageMigrationShape } from './storageState'
 
 export function storageMigrationDaemons(
   effects: T.Effects,
   job: StorageMigration,
 ) {
+  if (job.state === 'failed') {
+    throw new Error(
+      job.error ||
+        i18n(
+          'Library copy failed. Stop RomM and use Configure Library Storage to retry, or run Cancel Library Copy.',
+        ),
+    )
+  }
   const subcontainer = sdk.SubContainer.of(
     effects,
     { imageId: 'romm' },
@@ -25,6 +33,17 @@ export function storageMigrationDaemons(
     subcontainer,
     exec: {
       fn: async (sub, signal) => {
+        const persisted = await storeJson
+          .read((store) => store.storageMigration)
+          .once()
+        const failed = storageMigrationShape.safeParse(persisted)
+        if (failed.success && failed.data.state === 'failed')
+          throw new Error(
+            failed.data.error ||
+              i18n(
+                'Library copy failed. Stop RomM and use Configure Library Storage to retry, or run Cancel Library Copy.',
+              ),
+          )
         if (job.state !== 'copying') {
           await storeJson.merge(
             effects,
@@ -60,17 +79,6 @@ export function storageMigrationDaemons(
               progress = value
             },
           }
-          const legacy = job.source && job.source.layout !== 'library'
-          if (legacy) {
-            const destination = sdk.volumes.main.subpath(
-              `private-storage/${job.id}`,
-            )
-            await mkdir(destination, { recursive: true })
-            await runStorageCopy(source, destination, job.id, {
-              ...options,
-              directories: ['assets', 'resources', 'launchbox'],
-            })
-          }
           await runStorageCopy(
             source,
             await sub.subpath('/storage-destination'),
@@ -87,19 +95,24 @@ export function storageMigrationDaemons(
             {
               libraryStorage: job.destination,
               storageMigration: undefined,
-              ...(legacy ? { privateStorage: job.id } : {}),
             },
             { allowWriteAfterConst: true },
           )
         } catch (error) {
           if (signal.aborted) throw error
           const detail = error instanceof Error ? error.message : String(error)
-          throw new Error(
-            i18n(
-              'Library copy failed: ${error}. Original files remain selected. Restart to retry, or stop RomM and cancel the copy in Configure Library Storage.',
-              { error: detail },
-            ),
+          const message = i18n(
+            'Library copy failed: ${error}. Original files remain selected. Stop RomM and use Configure Library Storage to retry the same destination, or run Cancel Library Copy.',
+            { error: detail },
           )
+          await storeJson.merge(
+            effects,
+            {
+              storageMigration: { ...job, state: 'failed', error: message },
+            },
+            { allowWriteAfterConst: true },
+          )
+          throw new Error(message)
         } finally {
           clearInterval(timer)
         }

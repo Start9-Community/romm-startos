@@ -5,7 +5,6 @@ import {
   mkdtemp,
   readFile,
   readdir,
-  rename,
   rm,
   symlink,
   writeFile,
@@ -137,7 +136,6 @@ test('recovery selects retained internal files even with a missing provider and 
   assert.deepEqual(storageState(recovered), {
     active: undefined,
     job: undefined,
-    privateRoot: undefined,
   })
   assert.equal(recovered.adminPassword, 'unchanged')
   assert.equal(
@@ -162,7 +160,6 @@ test('cleanup removes only an inactive internal copy and preserves private files
   const active = {
     location: 'nextexplorer' as const,
     subpath: 'RomM',
-    layout: 'library' as const,
   }
   assert.deepEqual(await retainedLibraries(source, active), ['root'])
   await removeRetainedLibrary(source, 'root', active)
@@ -214,115 +211,27 @@ test('cleanup cannot follow a symlinked internal storage parent', async (t) => {
   )
 })
 
-test('legacy saves and artwork can be copied back to private storage separately from ROMs', async (t) => {
-  const { source, destination, options } = await fixture(t)
-  await mkdir(join(source, 'assets'))
-  await mkdir(join(source, 'resources'))
-  await writeFile(join(source, 'assets/save.bin'), 'latest save')
-  await writeFile(join(source, 'resources/cover.png'), 'artwork')
-  await runStorageCopy(source, destination, randomUUID(), {
-    ...options,
-    directories: ['assets', 'resources', 'launchbox'],
-  })
-  assert.equal(
-    await readFile(join(destination, 'assets/save.bin'), 'utf8'),
-    'latest save',
-  )
-  assert.equal(
-    await readFile(join(destination, 'resources/cover.png'), 'utf8'),
-    'artwork',
-  )
-  assert.equal((await readdir(destination)).includes('library'), false)
-})
-
-test('an interrupted publication finishes without recopying the source', async (t) => {
-  const { source, destination, options } = await fixture(t)
-  const id = randomUUID()
-  await runStorageCopy(source, destination, id, options)
-  const stage = join(destination, `.romm-copy-${id}`)
-  await mkdir(stage)
-  await rename(join(destination, '.romm-storage'), join(stage, '.romm-storage'))
-  await writeFile(
-    join(source, 'library/a.bin'),
-    'changed after the finished copy',
-  )
-  await assert.rejects(checkStorage(destination))
-  await runStorageCopy(source, destination, id, options)
-  await checkStorage(destination)
-  assert.equal(
-    await readFile(join(destination, 'library/a.bin'), 'utf8'),
-    'first game',
-  )
-})
-
-test('cleanup removes old internal destinations while keeping the active library and private snapshot', async (t) => {
+test('cleanup removes old internal destinations while keeping the active library', async (t) => {
   const { source } = await fixture(t)
   const activeId = `romm-${randomUUID()}`
   const oldId = `romm-${randomUUID()}`
-  const privateId = randomUUID()
-  const oldPrivateId = randomUUID()
-  for (const name of [
-    `storage/${activeId}`,
-    `storage/${oldId}`,
-    `private-storage/${privateId}`,
-    `private-storage/${oldPrivateId}`,
-  ]) {
-    await mkdir(join(source, name), { recursive: true })
-    await writeFile(join(source, name, 'keep.bin'), name)
+  for (const id of [activeId, oldId]) {
+    await mkdir(join(source, 'storage', id), { recursive: true })
+    await writeFile(join(source, 'storage', id, 'keep.bin'), id)
   }
-  const active = {
-    location: 'internal' as const,
-    subpath: activeId,
-    layout: 'library' as const,
-  }
-  await assert.rejects(
-    removeRetainedLibrary(source, activeId, active, undefined, privateId),
-  )
-  await assert.rejects(
-    removeRetainedLibrary(
-      source,
-      `private:${privateId}`,
-      active,
-      undefined,
-      privateId,
-    ),
-  )
-  await removeRetainedLibrary(source, oldId, active, undefined, privateId)
-  await removeRetainedLibrary(
-    source,
-    `private:${oldPrivateId}`,
-    active,
-    undefined,
-    privateId,
-  )
+  const active = { location: 'internal' as const, subpath: activeId }
+  await assert.rejects(removeRetainedLibrary(source, activeId, active))
+  await removeRetainedLibrary(source, oldId, active)
   assert.equal(
     await readFile(join(source, 'storage', activeId, 'keep.bin'), 'utf8'),
-    `storage/${activeId}`,
+    activeId,
   )
-  assert.equal(
-    await readFile(
-      join(source, 'private-storage', privateId, 'keep.bin'),
-      'utf8',
-    ),
-    `private-storage/${privateId}`,
-  )
-  assert.deepEqual(
-    await retainedLibraries(source, active, undefined, privateId),
-    ['root'],
-  )
+  assert.deepEqual(await retainedLibraries(source, active), ['root'])
 })
 
-test('recovery preserves private saves and refuses a symlinked original library', async (t) => {
+test('recovery refuses a symlinked original library', async (t) => {
   const { source, destination } = await fixture(t)
-  const privateId = randomUUID()
-  assert.equal(
-    (await recoverInternalLibrary(source, privateId)).privateStorage,
-    privateId,
-  )
   await rm(join(source, 'library'), { recursive: true })
   await symlink(destination, join(source, 'library'))
-  await assert.rejects(
-    recoverInternalLibrary(source, privateId),
-    /No retained original/,
-  )
+  await assert.rejects(recoverInternalLibrary(source), /No retained original/)
 })

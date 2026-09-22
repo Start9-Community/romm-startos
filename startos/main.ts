@@ -5,9 +5,7 @@ import { storageMigrationDaemons } from './storageMigration'
 import {
   checkLibraryStorage,
   libraryMounts,
-  privateLibraryMounts,
   selectedLibraryMount,
-  privateDataMounts,
 } from './storage'
 import { copyIdentity, storageState } from './storageState'
 import {
@@ -78,7 +76,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     return storageMigrationDaemons(effects, job!)
   }
   const store = await storeJson.read().const(effects)
-  const { active, privateRoot } = storageState(store)
+  const { active } = storageState(store)
   const primaryUrl = store?.primaryUrl
   if (
     !store?.databaseRootPassword ||
@@ -108,15 +106,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const romm = sdk.SubContainer.of(
     effects,
     { imageId: 'romm' },
-    libraryMounts(active),
+    libraryMounts(),
     'romm-app-sub',
   )
 
-  if (active?.layout === 'library')
-    await romm.mount(selectedLibraryMount(active))
-  else if (active) await romm.mount(privateLibraryMounts())
-  if ((!active || active.layout === 'library') && privateRoot)
-    await romm.mount(privateDataMounts(privateRoot))
+  if (active) await romm.mount(selectedLibraryMount(active))
 
   return sdk.Daemons.of(effects)
     .addDaemon('mariadb', {

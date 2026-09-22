@@ -3,13 +3,11 @@ import { z } from '@start9labs/start-sdk'
 export const storageFields = {
   libraryStorage: z.unknown().optional(),
   storageMigration: z.unknown().optional(),
-  privateStorage: z.unknown().optional(),
 }
 
 export const storageShape = z.object({
   location: z.enum(['internal', 'nextexplorer', 'filebrowser']),
   subpath: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/),
-  layout: z.literal('library').optional(),
 })
 
 export const storageMigrationShape = z.object({
@@ -28,7 +26,6 @@ export function storageState(
     | {
         libraryStorage?: unknown
         storageMigration?: unknown
-        privateStorage?: unknown
       }
     | null
     | undefined,
@@ -37,16 +34,11 @@ export function storageState(
   const job = storageMigrationShape
     .optional()
     .safeParse(store?.storageMigration)
-  const privateRoot = z
-    .string()
-    .uuid()
-    .optional()
-    .safeParse(store?.privateStorage)
-  if (!active.success || !job.success || !privateRoot.success)
+  if (!active.success || !job.success)
     throw new Error(
-      'Invalid storage settings. Stop RomM and use Recover Internal Library or cancel the pending copy in Configure Library Storage.',
+      'Invalid storage settings. Stop RomM and use Recover Internal Library or Cancel Library Copy.',
     )
-  return { active: active.data, job: job.data, privateRoot: privateRoot.data }
+  return { active: active.data, job: job.data }
 }
 
 export function storageKey(storage: LibraryStorage | undefined) {
