@@ -10,7 +10,7 @@ StartOS creates RomM's administrator account for you. Run **Set Admin Password**
 
 A web library for your game collection. Drop ROM files into a folder per console, run a scan, and RomM matches each file against online games databases to fill in cover art, release dates, descriptions, and box scans — then lets you browse, search, and play the supported ones in the browser.
 
-RomM comes with its own database and cache; nothing else needs installing. Your library, artwork, and database are all included in StartOS backups.
+RomM comes with its own database and cache; nothing else needs installing. Your library, artwork, and database are included in StartOS backups. Existing installations keep their detected layout during the upgrade.
 
 RomM signs users in with a username and password. StartOS creates the first account rather than leaving its setup wizard open to whoever reaches the address first.
 
@@ -21,7 +21,7 @@ RomM signs users in with a username and password. StartOS creates the first acco
 3. Open the **RomM Web Interface** and sign in with those credentials.
 4. Run **Set Primary URL** and select the address RomM should use for invite and password-reset links. Prefer an HTTPS address.
 5. Run **Configure Metadata Providers** and turn on at least one. Without one, a scan finds your files but leaves them with no cover art or descriptions.
-6. Add your ROM files under `library/`, one folder per console, using the folder names on the Supported Platforms page of the upstream documentation. Start with a handful of files before copying a large collection.
+6. Add your ROM files under `library/roms/<platform>/` in a new installation, using the folder names on the Supported Platforms page of the upstream documentation. Existing libraries keep their folder layout when upgraded to RomM 5.3.0. Start with a handful of files before copying a large collection.
 7. Run a scan from RomM's **Library** screen and check that the games come back with cover art.
 
 ## Using RomM
