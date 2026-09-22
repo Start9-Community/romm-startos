@@ -7,6 +7,10 @@ import { getPreferredUiUrl, getUiUrls } from '../utils'
 const taskReplayId = 'romm:set-primary-url'
 
 export const watchPrimaryUrl = sdk.setupOnInit(async (effects) => {
+  const copying = await storeJson
+    .read((store) => Boolean(store.storageMigration))
+    .const(effects)
+  if (copying) return
   const urls = await getUiUrls(effects)
   const primaryUrl = await storeJson
     .read((store) => store.primaryUrl)

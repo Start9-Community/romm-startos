@@ -1,14 +1,19 @@
 import { sdk } from './sdk'
 import { i18n } from './i18n'
 import { storeJson } from './fileModels/store.json'
+import { storageMigrationDaemons } from './storageMigration'
+import {
+  checkLibraryStorage,
+  libraryMounts,
+  selectedLibraryMount,
+} from './storage'
+import { copyIdentity, storageState } from './storageState'
 import {
   adminEmail,
   adminUsername,
   databaseName,
   databasePort,
   databaseUser,
-  mainMountpoint,
-  redisMountpoint,
   uiPort,
 } from './utils'
 
@@ -65,7 +70,13 @@ echo "created the RomM admin account"
 `
 
 export const main = sdk.setupMain(async ({ effects }) => {
+  const pending = await storeJson.read(copyIdentity).const(effects)
+  if (pending) {
+    const { job } = storageState(await storeJson.read().once())
+    return storageMigrationDaemons(effects, job!)
+  }
   const store = await storeJson.read().const(effects)
+  const { active } = storageState(store)
   const primaryUrl = store?.primaryUrl
   if (
     !store?.databaseRootPassword ||
@@ -77,6 +88,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
   if (!store.adminPassword) {
     throw new Error('The RomM admin password has not been set')
   }
+
+  await checkLibraryStorage(effects, active)
 
   const mariadb = sdk.SubContainer.of(
     effects,
@@ -93,21 +106,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const romm = sdk.SubContainer.of(
     effects,
     { imageId: 'romm' },
-    sdk.Mounts.of()
-      .mountVolume({
-        volumeId: 'main',
-        subpath: null,
-        mountpoint: mainMountpoint,
-        readonly: false,
-      })
-      .mountVolume({
-        volumeId: 'main',
-        subpath: 'redis-data',
-        mountpoint: redisMountpoint,
-        readonly: false,
-      }),
+    libraryMounts(),
     'romm-app-sub',
   )
+
+  if (active) await romm.mount(selectedLibraryMount(active))
 
   return sdk.Daemons.of(effects)
     .addDaemon('mariadb', {
