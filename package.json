@@ -9,13 +9,12 @@
   },
   "dependencies": {
     "@start9labs/start-sdk": "2.0.9",
-    "filebrowser-startos": "https://codeload.github.com/Start9Labs/filebrowser-quantum-startos/tar.gz/85efa61414a84e40fd24b4d70f9b7919357b672a",
-    "nextexplorer-startos": "https://codeload.github.com/Start9Labs/nextexplorer-startos/tar.gz/853598c02f5604fb5f092420e68e7a7e68a50720",
+    "filebrowser-startos": "github:Start9Labs/filebrowser-startos#next",
+    "nextexplorer-startos": "github:Start9Labs/nextexplorer-startos#next",
     "yaml": "2.9.0"
   },
   "overrides": {
-    "@start9labs/start-sdk": "$@start9labs/start-sdk",
-    "filebrowser-startos": "$filebrowser-startos"
+    "@start9labs/start-sdk": "$@start9labs/start-sdk"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

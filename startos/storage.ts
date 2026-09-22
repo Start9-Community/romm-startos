@@ -1,25 +1,12 @@
 import type { manifest as filebrowserManifest } from 'filebrowser-startos/startos/manifest'
 import type { manifest as nextexplorerManifest } from 'nextexplorer-startos/startos/manifest'
-import { type T, z } from '@start9labs/start-sdk'
+import { type T } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
 import { mainMountpoint, redisMountpoint } from './utils'
 import { checkStorage } from './storageCopy'
-
-export const storageShape = z.object({
-  location: z.enum(['internal', 'nextexplorer', 'filebrowser']),
-  subpath: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/),
-})
-
-export type LibraryStorage = z.infer<typeof storageShape>
-
-export const storageMigrationShape = z.object({
-  source: storageShape.optional(),
-  destination: storageShape,
-  state: z.enum(['pending', 'failed']),
-  error: z.string().optional(),
-})
-
-export type StorageMigration = z.infer<typeof storageMigrationShape>
+import type { LibraryStorage } from './storageState'
+export { storageShape, storageMigrationShape } from './storageState'
+export type { LibraryStorage, StorageMigration } from './storageState'
 
 export function mountStorage(
   mounts: ReturnType<typeof sdk.Mounts.of>,
@@ -27,11 +14,16 @@ export function mountStorage(
   mountpoint: string,
   readonly: boolean,
   remap = false,
+  libraryOnly = false,
 ) {
   if (!storage || storage.location === 'internal') {
     return mounts.mountVolume({
       volumeId: 'main',
-      subpath: storage ? `storage/${storage.subpath}` : null,
+      subpath: storage
+        ? `storage/${storage.subpath}${libraryOnly ? '/library' : ''}`
+        : libraryOnly
+          ? 'library'
+          : null,
       mountpoint,
       readonly,
     })
@@ -42,7 +34,7 @@ export function mountStorage(
   >({
     dependencyId: storage.location,
     volumeId: 'data',
-    subpath: storage.subpath,
+    subpath: `${storage.subpath}${libraryOnly ? '/library' : ''}`,
     mountpoint,
     readonly,
     ...(remap && {
@@ -52,6 +44,21 @@ export function mountStorage(
 }
 
 export function libraryMounts(storage: LibraryStorage | undefined) {
+  if (!storage || storage.layout === 'library') {
+    return sdk.Mounts.of()
+      .mountVolume({
+        volumeId: 'main',
+        subpath: null,
+        mountpoint: mainMountpoint,
+        readonly: false,
+      })
+      .mountVolume({
+        volumeId: 'main',
+        subpath: 'redis-data',
+        mountpoint: redisMountpoint,
+        readonly: false,
+      })
+  }
   return mountStorage(
     sdk.Mounts.of(),
     storage,
@@ -64,6 +71,29 @@ export function libraryMounts(storage: LibraryStorage | undefined) {
     mountpoint: redisMountpoint,
     readonly: false,
   })
+}
+
+export function selectedLibraryMount(storage: LibraryStorage) {
+  return mountStorage(
+    sdk.Mounts.of(),
+    storage,
+    `${mainMountpoint}/library`,
+    false,
+    true,
+    true,
+  )
+}
+
+export function privateDataMounts(id: string) {
+  let mounts = sdk.Mounts.of()
+  for (const name of ['assets', 'resources', 'launchbox'])
+    mounts = mounts.mountVolume({
+      volumeId: 'main',
+      subpath: `private-storage/${id}/${name}`,
+      mountpoint: `${mainMountpoint}/${name}`,
+      readonly: false,
+    })
+  return mounts
 }
 
 export function privateLibraryMounts() {

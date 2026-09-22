@@ -1,6 +1,7 @@
 import { sdk } from '../sdk'
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
+import { requireNoStorageCopy } from '../storageGuard'
 
 const { InputSpec, Value, Variants } = sdk
 
@@ -108,6 +109,7 @@ export const configure = sdk.Action.withInput(
 
   // main.ts reads the store reactively, so writing it restarts RomM on its own.
   async ({ effects, input }) => {
+    await requireNoStorageCopy()
     await storeJson.merge(effects, input)
 
     return {

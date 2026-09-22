@@ -61,6 +61,22 @@ const dict = {
   'The storage copy is queued. Start RomM to copy the files before its web interface starts. Original files will be retained. Stop RomM to interrupt the copy.': 63,
   'Destination Library Folder': 64,
   'The pending copy was cancelled. RomM will keep using its current storage. Partial destination files were retained.': 65,
+  'Finish or cancel the library copy before changing settings.': 100,
+  'Copying library: ${files} files, ${bytes} of ${total} bytes.': 101,
+  'Library copy completed. Original files were retained.': 102,
+  'Library copy failed: ${error}. Original files remain selected. Restart to retry, or stop RomM and cancel the copy in Configure Library Storage.': 103,
+  'Recover Internal Library': 104,
+  'Cancel Library Copy': 105,
+  'Copy ROM files to a file manager or internal storage. Saves and artwork stay private.': 106,
+  'Back up first. Recovery uses the retained original library and does not include later file-manager changes.': 107,
+  'The retained internal library is selected. Later changes in the file manager are not included.': 108,
+  'Choose a new empty folder to convert the trial shared-storage layout.': 109,
+  'Remove Retained Library': 110,
+  'Reclaim space used by an inactive internal library copy.': 111,
+  'This permanently deletes the selected retained copy. Verify the active library and keep a backup first. Removing the original disables recovery to that copy.': 112,
+  'Retained Library': 113,
+  'No inactive internal library copies are available.': 114,
+  'The inactive library copy was removed. Active files and private application data were preserved.': 115,
 } as const
 
 export type I18nKey = keyof typeof dict

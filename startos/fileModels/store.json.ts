@@ -1,6 +1,6 @@
 import { FileHelper, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
-import { storageMigrationShape, storageShape } from '../storage'
+import { storageFields } from '../storageState'
 
 const provider = <T extends z.ZodRawShape>(value: T) =>
   z
@@ -17,8 +17,7 @@ const shape = z.looseObject({
   authSecret: z.string().optional().catch(undefined),
   adminPassword: z.string().optional().catch(undefined),
   primaryUrl: z.string().optional().catch(undefined),
-  libraryStorage: storageShape.optional(),
-  storageMigration: storageMigrationShape.optional(),
+  ...storageFields,
   igdb: provider({ clientId: z.string(), clientSecret: z.string() }),
   mobygames: provider({ apiKey: z.string() }),
   steamgriddb: provider({ apiKey: z.string() }),

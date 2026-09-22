@@ -2,7 +2,14 @@ import { randomUUID } from 'node:crypto'
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { storageShape } from '../storage'
+import { checkLibraryStorage } from '../storage'
+import {
+  storageShape,
+  storageMigrationShape,
+  storageState,
+  storageKey,
+} from '../storageState'
+import { recoverInternalLibrary } from '../storageRecovery'
 
 const { InputSpec, Value, Variants } = sdk
 
@@ -33,6 +40,11 @@ export const inputSpec = InputSpec.of({
       internal: { name: i18n('Internal Storage'), spec: InputSpec.of({}) },
       nextexplorer: { name: 'NextExplorer', spec: folderSpec },
       filebrowser: { name: 'File Browser', spec: folderSpec },
+      recover: {
+        name: i18n('Recover Internal Library'),
+        spec: InputSpec.of({}),
+      },
+      cancel: { name: i18n('Cancel Library Copy'), spec: InputSpec.of({}) },
     }),
   }),
 })
@@ -42,10 +54,10 @@ export const setLibraryStorage = sdk.Action.withInput(
   async () => ({
     name: i18n('Configure Library Storage'),
     description: i18n(
-      'Copy your library and artwork into NextExplorer, File Browser including Quantum, or internal storage. Original files are retained.',
+      'Copy ROM files to a file manager or internal storage. Saves and artwork stay private.',
     ),
     warning: i18n(
-      'Back up first. The destination needs space for a full copy. Do not edit files during copying. Shared files require a separate backup of the file manager.',
+      'Back up first. Recovery uses the retained original library and does not include later file-manager changes.',
     ),
     allowedStatuses: 'only-stopped',
     group: null,
@@ -53,7 +65,10 @@ export const setLibraryStorage = sdk.Action.withInput(
   }),
   inputSpec,
   async () => {
-    const storage = (await storeJson.read().once())?.libraryStorage
+    const parsed = storageShape.safeParse(
+      (await storeJson.read().once())?.libraryStorage,
+    )
+    const storage = parsed.success ? parsed.data : undefined
     return {
       storage:
         storage && storage.location !== 'internal'
@@ -63,56 +78,110 @@ export const setLibraryStorage = sdk.Action.withInput(
   },
   async ({ effects, input }) => {
     const status = await sdk.getStatus(effects).once()
-    if (status?.desired.main !== 'stopped' || status.started) {
+    if (status?.desired.main !== 'stopped' || status.started)
       throw new Error(
         i18n(
           'Stop RomM and wait for it to finish stopping before changing storage.',
         ),
       )
-    }
 
     const saved = await storeJson.read().once()
-    const source = saved?.libraryStorage
     const location = input.storage.selection
-    const subpath =
-      location === 'internal'
-        ? `romm-${randomUUID()}`
-        : input.storage.value.folder
+    const recover = async () => {
+      const patch = await recoverInternalLibrary(
+        sdk.volumes.main.path,
+        saved?.privateStorage,
+      )
+      await storeJson.merge(effects, patch)
+      return {
+        version: '1' as const,
+        title: i18n('Recover Internal Library'),
+        message: i18n(
+          'The retained internal library is selected. Later changes in the file manager are not included.',
+        ),
+        result: null,
+      }
+    }
+    if (location === 'recover') return recover()
+    if (location === 'cancel') {
+      await storeJson.merge(effects, { storageMigration: undefined })
+      return {
+        version: '1',
+        title: i18n('Library Storage Unchanged'),
+        message: i18n(
+          'The pending copy was cancelled. RomM will keep using its current storage. Partial destination files were retained.',
+        ),
+        result: null,
+      }
+    }
+    const parsed = storageShape.optional().safeParse(saved?.libraryStorage)
+    if (!parsed.success) {
+      if (location === 'internal') return recover()
+      storageState(saved)
+    }
+    const source = parsed.success ? parsed.data : undefined
     if (
       (location === 'internal' &&
-        (!source || source.location === 'internal')) ||
-      (source?.location === location && source.subpath === subpath)
+        (!source ||
+          (source.location === 'internal' && source.layout === 'library'))) ||
+      (location !== 'internal' &&
+        source?.location === location &&
+        source.subpath === input.storage.value.folder &&
+        source.layout === 'library')
     ) {
       await storeJson.merge(effects, { storageMigration: undefined })
       return {
         version: '1',
         title: i18n('Library Storage Unchanged'),
-        message: saved?.storageMigration
-          ? i18n(
-              'The pending copy was cancelled. RomM will keep using its current storage. Partial destination files were retained.',
-            )
-          : i18n('RomM already uses the selected storage.'),
+        message: i18n('RomM already uses the selected storage.'),
         result: null,
       }
     }
-
-    const destination = storageShape.parse({ location, subpath })
     const installed = await sdk.getInstalledPackages(effects)
-    for (const storage of [source, destination]) {
-      if (
-        storage &&
-        storage.location !== 'internal' &&
-        !installed.includes(storage.location)
-      ) {
-        throw new Error(
-          i18n('Install the selected file manager before changing storage.'),
+    if (location !== 'internal' && !installed.includes(location))
+      throw new Error(
+        i18n('Install the selected file manager before changing storage.'),
+      )
+    if (source) {
+      try {
+        if (
+          source.location !== 'internal' &&
+          !installed.includes(source.location)
         )
+          throw new Error('Storage provider missing')
+        await checkLibraryStorage(effects, source)
+      } catch (error) {
+        if (location === 'internal') return recover()
+        throw error
       }
     }
-
-    await storeJson.merge(effects, {
-      storageMigration: { source, destination, state: 'pending' },
-    })
+    const previous = storageMigrationShape.safeParse(saved?.storageMigration)
+    const sameJob =
+      previous.success &&
+      previous.data.destination.location === location &&
+      (location === 'internal' ||
+        previous.data.destination.subpath === input.storage.value.folder) &&
+      storageKey(previous.data.source) === storageKey(source)
+    const destination = sameJob
+      ? previous.data.destination
+      : storageShape.parse({
+          location,
+          subpath:
+            location === 'internal'
+              ? `romm-${randomUUID()}`
+              : input.storage.value.folder,
+          layout: 'library',
+        })
+    if (source && storageKey(source) === storageKey(destination))
+      throw new Error(
+        i18n(
+          'Choose a new empty folder to convert the trial shared-storage layout.',
+        ),
+      )
+    const job = sameJob
+      ? previous.data
+      : { id: randomUUID(), source, destination, state: 'pending' as const }
+    await storeJson.merge(effects, { storageMigration: job })
     return {
       version: '1',
       title: i18n('Library Copy Queued'),
@@ -125,8 +194,8 @@ export const setLibraryStorage = sdk.Action.withInput(
         description: null,
         value:
           location === 'internal'
-            ? `main:storage/${subpath}/library`
-            : `${location}:data/${subpath}/library`,
+            ? `main:storage/${destination.subpath}/library`
+            : `${location}:data/${destination.subpath}/library`,
         masked: false,
         copyable: true,
         qr: false,

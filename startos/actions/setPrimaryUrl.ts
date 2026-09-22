@@ -2,6 +2,7 @@ import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { getPreferredUiUrl, getUiUrls } from '../utils'
+import { requireNoStorageCopy } from '../storageGuard'
 
 const { InputSpec, Value } = sdk
 
@@ -46,6 +47,7 @@ export const setPrimaryUrl = sdk.Action.withInput(
     }
   },
   async ({ effects, input }) => {
+    await requireNoStorageCopy()
     const urls = await getUiUrls(effects)
     if (!input.url || !urls.includes(input.url)) {
       throw new Error('Selected RomM URL is no longer available')

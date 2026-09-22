@@ -20,21 +20,6 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { checkStorage, copyStorage } from '../startos/storageCopy.ts'
 
-async function waitForFile(path: string) {
-  const deadline = Date.now() + 5000
-  while (Date.now() < deadline) {
-    if (
-      await lstat(path).then(
-        () => true,
-        () => false,
-      )
-    )
-      return
-    await new Promise((resolve) => setTimeout(resolve, 1))
-  }
-  throw new Error('Destination file did not appear')
-}
-
 async function fixture(t: TestContext) {
   const root = await mkdtemp(join(tmpdir(), 'romm-storage-'))
   t.after(() => rm(root, { recursive: true, force: true }))
@@ -56,7 +41,7 @@ async function fixture(t: TestContext) {
   return { root, source, target, write, options }
 }
 
-test('copies multi-disc files and artwork, preserves hardlinks and excludes private state', async (t) => {
+test('copies only the library, preserves its hardlinks and keeps saves and artwork private', async (t) => {
   const { source, target, write, options } = await fixture(t)
   const disc = await write('library/roms/ps/Game/Disc 1.bin', 'first disc')
   await write('library/roms/ps/Game/Disc 2.bin', 'second disc')
@@ -64,6 +49,7 @@ test('copies multi-disc files and artwork, preserves hardlinks and excludes priv
   await write('launchbox/metadata.xml', 'metadata')
   await mkdir(join(source, 'assets'))
   await link(disc, join(source, 'assets/disc.bin'))
+  await link(disc, join(source, 'library/roms/ps/Game/Disc 1 copy.bin'))
   await chmod(disc, 0o600)
   await utimes(disc, 1600000000, 1600000000)
   for (const name of [
@@ -77,8 +63,8 @@ test('copies multi-disc files and artwork, preserves hardlinks and excludes priv
   }
 
   assert.deepEqual(await copyStorage(source, target, options), {
-    files: 5,
-    bytes: 38,
+    files: 3,
+    bytes: 21,
   })
   const copiedDisc = join(target, 'library/roms/ps/Game/Disc 1.bin')
   assert.equal(await readFile(copiedDisc, 'utf8'), 'first disc')
@@ -88,18 +74,12 @@ test('copies multi-disc files and artwork, preserves hardlinks and excludes priv
   )
   assert.equal(
     (await stat(copiedDisc)).ino,
-    (await stat(join(target, 'assets/disc.bin'))).ino,
+    (await stat(join(target, 'library/roms/ps/Game/Disc 1 copy.bin'))).ino,
   )
   assert.equal((await stat(copiedDisc)).mtimeMs, 1600000000000)
   assert.equal((await stat(copiedDisc)).mode & 0o777, 0o644)
   assert.equal((await stat(copiedDisc)).uid, process.getuid!())
-  assert.deepEqual((await readdir(target)).sort(), [
-    '.romm-storage',
-    'assets',
-    'launchbox',
-    'library',
-    'resources',
-  ])
+  assert.deepEqual((await readdir(target)).sort(), ['.romm-storage', 'library'])
   assert.equal(await readFile(disc, 'utf8'), 'first disc')
   assert.equal((await stat(disc)).mode & 0o777, 0o600)
   assert.equal(
@@ -231,16 +211,17 @@ test('cancellation retains the source and leaves no completed destination marker
   const file = await write('library/large.bin', '')
   await truncate(file, 32 * 1024 * 1024)
   const controller = new AbortController()
-  const interrupt = (async () => {
-    await waitForFile(join(target, 'library/large.bin'))
-    controller.abort()
-  })()
 
   await assert.rejects(
-    copyStorage(source, target, { ...options, signal: controller.signal }),
+    copyStorage(source, target, {
+      ...options,
+      signal: controller.signal,
+      onProgress: ({ files }) => {
+        if (files) controller.abort()
+      },
+    }),
     { name: 'AbortError' },
   )
-  await interrupt
   assert.equal((await stat(file)).size, 32 * 1024 * 1024)
   await assert.rejects(
     checkStorage(target),
@@ -252,16 +233,16 @@ test('rejects files added to an already visited source directory before activati
   const { source, target, write, options } = await fixture(t)
   const file = await write('library/large.bin', '')
   await truncate(file, 32 * 1024 * 1024)
-  const edit = (async () => {
-    await waitForFile(join(target, 'library/large.bin'))
-    await write('library/added.bin', 'new game')
-  })()
 
   await assert.rejects(
-    copyStorage(source, target, options),
+    copyStorage(source, target, {
+      ...options,
+      onProgress: async ({ files }) => {
+        if (files) await write('library/added.bin', 'new game')
+      },
+    }),
     /source changed during copying/,
   )
-  await edit
   assert.equal(
     await readFile(join(source, 'library/added.bin'), 'utf8'),
     'new game',
@@ -277,16 +258,16 @@ test('rejects late edits to a source file copied earlier', async (t) => {
   await write('library/a.bin', 'original')
   const large = await write('library/b.bin', '')
   await truncate(large, 32 * 1024 * 1024)
-  const edit = (async () => {
-    await waitForFile(join(target, 'library/b.bin'))
-    await write('library/a.bin', 'changed after copy')
-  })()
 
   await assert.rejects(
-    copyStorage(source, target, options),
+    copyStorage(source, target, {
+      ...options,
+      onProgress: async ({ files }) => {
+        if (files === 2) await write('library/a.bin', 'changed after copy')
+      },
+    }),
     /source changed during copying/,
   )
-  await edit
   assert.equal(
     await readFile(join(source, 'library/a.bin'), 'utf8'),
     'changed after copy',

@@ -118,17 +118,11 @@ test(
     async function start(image: string, directory: string, external = false) {
       const mounts = [
         '-v',
-        `${directory}:/romm`,
+        `${main}:/romm`,
         '-v',
         `${main}/redis-data:/redis-data`,
       ]
-      if (external)
-        mounts.push(
-          '-v',
-          `${main}/config:/romm/config`,
-          '-v',
-          `${main}/sync:/romm/sync`,
-        )
+      if (external) mounts.push('-v', `${directory}/library:/romm/library`)
       await docker([
         'run',
         '-d',
@@ -262,9 +256,15 @@ test(
     await login()
     const copied = path.join(shared, 'library', 'roms', 'gba', 'fixture.gba')
     assert.equal(await fs.readFile(copied, 'utf8'), 'synthetic test bytes')
+    await assert.rejects(fs.stat(path.join(shared, 'assets')), {
+      code: 'ENOENT',
+    })
+    await assert.rejects(fs.stat(path.join(shared, 'resources')), {
+      code: 'ENOENT',
+    })
     assert.equal(
-      (await fs.stat(copied)).ino,
-      (await fs.stat(path.join(shared, 'assets', 'fixture.gba'))).ino,
+      await fs.readFile(path.join(main, 'assets', 'fixture.gba'), 'utf8'),
+      'synthetic test bytes',
     )
     await assert.rejects(fs.stat(path.join(shared, 'store.json')), {
       code: 'ENOENT',

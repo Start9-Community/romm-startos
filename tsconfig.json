@@ -1,4 +1,5 @@
 {
   "extends": "@start9labs/start-sdk/tsconfig.base.json",
+  "compilerOptions": { "rewriteRelativeImportExtensions": true },
   "include": ["startos/**/*.ts", "node_modules/**/startos"]
 }

@@ -2,6 +2,7 @@ import { constants } from 'node:fs'
 import {
   chmod,
   chown,
+  copyFile,
   lstat,
   link,
   mkdir,
@@ -14,7 +15,7 @@ import {
 } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
-const directories = ['library', 'assets', 'resources', 'launchbox']
+const directories = ['library']
 const markerName = '.romm-storage'
 
 export async function checkStorage(source: string) {
@@ -42,6 +43,12 @@ export async function copyStorage(
     gid: number
     requireMarker: boolean
     signal?: AbortSignal
+    directories?: string[]
+    onProgress?: (progress: {
+      files: number
+      bytes: number
+      totalBytes: number
+    }) => void | Promise<void>
   },
 ) {
   options.signal?.throwIfAborted()
@@ -86,7 +93,7 @@ export async function copyStorage(
     }
   }
 
-  for (const name of directories) {
+  for (const name of options.directories ?? directories) {
     const path = join(source, name)
     const info = await lstat(path).catch((error: NodeJS.ErrnoException) => {
       if (error.code === 'ENOENT') return undefined
@@ -108,6 +115,8 @@ export async function copyStorage(
 
   const copied = new Map<string, string>()
   let files = 0
+  let copiedBytes = 0
+  await options.onProgress?.({ files, bytes: copiedBytes, totalBytes: bytes })
   for (const { path, info } of entries) {
     options.signal?.throwIfAborted()
     const target = join(destination, relative(source, path))
@@ -141,27 +150,12 @@ export async function copyStorage(
               'The source changed during copying; stop editing files and retry',
             )
           }
-          const output = await open(target, 'wx', 0o644)
-          try {
-            const buffer = Buffer.alloc(1024 * 1024)
-            let read = await input.read(buffer)
-            while (read.bytesRead) {
-              options.signal?.throwIfAborted()
-              let written = 0
-              while (written < read.bytesRead) {
-                const result = await output.write(
-                  buffer,
-                  written,
-                  read.bytesRead - written,
-                )
-                written += result.bytesWritten
-              }
-              read = await input.read(buffer)
-            }
-            await output.sync()
-          } finally {
-            await output.close()
-          }
+          await copyFile(
+            path,
+            target,
+            constants.COPYFILE_EXCL | constants.COPYFILE_FICLONE,
+          )
+          options.signal?.throwIfAborted()
           const after = await input.stat()
           if (after.mtimeMs !== info.mtimeMs || after.size !== info.size) {
             throw new Error(
@@ -172,8 +166,14 @@ export async function copyStorage(
           await input.close()
         }
         copied.set(key, target)
+        copiedBytes += info.size
       }
       files++
+      await options.onProgress?.({
+        files,
+        bytes: copiedBytes,
+        totalBytes: bytes,
+      })
     }
     await chown(target, options.uid, options.gid)
     await chmod(target, info.isDirectory() ? 0o755 : 0o644)
@@ -201,7 +201,7 @@ export async function copyStorage(
       )
     }
   }
-  for (const name of directories) {
+  for (const name of options.directories ?? directories) {
     if (!presentDirectories.has(name)) {
       const appeared = await lstat(join(source, name)).catch(
         (error: NodeJS.ErrnoException) => {

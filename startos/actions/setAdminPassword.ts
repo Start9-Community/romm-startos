@@ -3,6 +3,7 @@ import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { adminUsername, uiPort } from '../utils'
+import { requireNoStorageCopy } from '../storageGuard'
 
 const api = `http://127.0.0.1:${uiPort}/api`
 
@@ -70,6 +71,7 @@ export const setAdminPassword = sdk.Action.withoutInput(
   },
 
   async ({ effects }) => {
+    await requireNoStorageCopy()
     const saved = await storeJson.read().once()
     const adminPassword = utils.getDefaultString({
       charset: 'a-z,A-Z,0-9',

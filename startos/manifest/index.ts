@@ -40,7 +40,7 @@ export const manifest = setupManifest({
       optional: true,
       metadata: {
         title: 'File Browser',
-        icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-quantum-startos/85efa61414a84e40fd24b4d70f9b7919357b672a/icon.svg',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-startos/b4f782cdc3ce629744d7948a240e591795d0dca8/icon.svg',
       },
     },
   },
