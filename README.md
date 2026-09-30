@@ -11,6 +11,8 @@
 
 RomM is a self-hosted manager for a personal game library: it scans a folder of ROMs, matches each one against online games databases for cover art and metadata, and serves the result as a browsable, playable web collection.
 
+This package runs RomM 5.3.1. The update includes security and stability fixes for account sessions, streaming, and folder mappings. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
+
 ---
 
 ## Table of Contents
