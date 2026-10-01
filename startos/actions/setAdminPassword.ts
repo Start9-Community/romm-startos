@@ -2,8 +2,7 @@ import { utils } from '@start9labs/start-sdk'
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { adminUsername, uiPort } from '../utils'
-import { requireNoStorageCopy } from '../storageGuard'
+import { adminUsername, requireNoStorageCopy, uiPort } from '../utils'
 
 const api = `http://127.0.0.1:${uiPort}/api`
 

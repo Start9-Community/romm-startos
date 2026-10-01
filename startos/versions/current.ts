@@ -1,5 +1,5 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
-import { migrateConfig } from '../config'
+import { migrateConfig } from '../utils'
 
 export const current = VersionInfo.of({
   version: '5.3.0:0',
