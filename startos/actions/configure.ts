@@ -1,7 +1,7 @@
 import { sdk } from '../sdk'
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
-import { requireNoStorageCopy } from '../storageGuard'
+import { requireNoStorageCopy } from '../utils'
 
 const { InputSpec, Value, Variants } = sdk
 

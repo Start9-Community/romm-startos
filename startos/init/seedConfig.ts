@@ -1,4 +1,4 @@
-import { migrateConfig } from '../config'
+import { migrateConfig } from '../utils'
 import { sdk } from '../sdk'
 
 export const seedConfig = sdk.setupOnInit(async (_effects, kind) => {
