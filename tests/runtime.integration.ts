@@ -45,6 +45,22 @@ test(
     t.after(async () => {
       for (const name of containers)
         await docker(['rm', '-fv', name]).catch(() => {})
+      await docker([
+        'run',
+        '--rm',
+        '--network',
+        'none',
+        '--user',
+        '0',
+        '-v',
+        `${root}:/fixture`,
+        '--entrypoint',
+        'chown',
+        databaseImage,
+        '-R',
+        `${process.getuid!()}:${process.getgid!()}`,
+        '/fixture',
+      ])
       await fs.rm(root, { recursive: true, force: true })
     })
     await fs.mkdir(path.join(main, 'library', 'roms', 'gba'), {
