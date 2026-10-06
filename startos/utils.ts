@@ -1,4 +1,7 @@
 import { type T } from '@start9labs/start-sdk'
+import { migrateConfigFile } from './configMigration'
+import { storeJson } from './fileModels/store.json'
+import { i18n } from './i18n'
 import { sdk } from './sdk'
 
 export const uiPort = 8080
@@ -35,4 +38,13 @@ export function getPreferredUiUrl(urls: string[]): string {
     urls[0] ??
     ''
   )
+}
+
+export const migrateConfig = () => migrateConfigFile(sdk.volumes.main.path)
+
+export async function requireNoStorageCopy() {
+  if ((await storeJson.read().once())?.storageMigration)
+    throw new Error(
+      i18n('Finish or cancel the library copy before changing settings.'),
+    )
 }

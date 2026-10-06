@@ -1,8 +1,7 @@
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { getPreferredUiUrl, getUiUrls } from '../utils'
-import { requireNoStorageCopy } from '../storageGuard'
+import { getPreferredUiUrl, getUiUrls, requireNoStorageCopy } from '../utils'
 
 const { InputSpec, Value } = sdk
 
