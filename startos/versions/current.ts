@@ -1,18 +1,18 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '5.3.1:0',
+  version: '5.3.1:1',
   releaseNotes: {
     en_US:
-      'Updates RomM to 5.3.1 with security and stability fixes, including session revocation after credential changes and fixes for streaming and folder mappings. Full release notes: https://github.com/rommapp/romm/releases/tag/5.3.1',
+      'Migrates the package to StartOS SDK 3.0.2, requiring StartOS 0.4.0.2 or later. Updates storage dependency declarations and MariaDB backups while preserving stored settings. RomM remains at 5.3.1.',
     es_ES:
-      'Actualiza RomM a 5.3.1 con correcciones de seguridad y estabilidad, incluida la revocación de sesiones tras cambiar credenciales y mejoras en la transmisión y las carpetas. Notas completas: https://github.com/rommapp/romm/releases/tag/5.3.1',
+      'Migra el paquete al SDK de StartOS 3.0.2 y requiere StartOS 0.4.0.2 o posterior. Actualiza las dependencias de almacenamiento y las copias de seguridad de MariaDB, conservando la configuración guardada. RomM sigue en la versión 5.3.1.',
     de_DE:
-      'Aktualisiert RomM auf 5.3.1 mit Sicherheits- und Stabilitätskorrekturen, einschließlich der Aufhebung von Sitzungen nach einer Änderung der Zugangsdaten sowie Korrekturen für Streaming und Ordnerzuordnungen. Vollständige Versionshinweise: https://github.com/rommapp/romm/releases/tag/5.3.1',
+      'Stellt das Paket auf StartOS SDK 3.0.2 um und benötigt StartOS 0.4.0.2 oder neuer. Aktualisiert Speicherabhängigkeiten und MariaDB-Sicherungen und erhält gespeicherte Einstellungen. RomM bleibt auf Version 5.3.1.',
     pl_PL:
-      'Aktualizuje RomM do wersji 5.3.1 z poprawkami bezpieczeństwa i stabilności, w tym unieważnianiem sesji po zmianie danych logowania oraz poprawkami transmisji i mapowania folderów. Pełne informacje: https://github.com/rommapp/romm/releases/tag/5.3.1',
+      'Przenosi pakiet na StartOS SDK 3.0.2 i wymaga StartOS 0.4.0.2 lub nowszego. Aktualizuje zależności pamięci masowej i kopie zapasowe MariaDB, zachowując zapisane ustawienia. RomM pozostaje w wersji 5.3.1.',
     fr_FR:
-      'Met RomM à jour vers la version 5.3.1 avec des correctifs de sécurité et de stabilité, notamment la révocation des sessions après un changement des identifiants et des corrections pour le streaming et les dossiers. Notes complètes : https://github.com/rommapp/romm/releases/tag/5.3.1',
+      'Migre le paquet vers le SDK StartOS 3.0.2 et nécessite StartOS 0.4.0.2 ou une version ultérieure. Met à jour les dépendances de stockage et les sauvegardes MariaDB en conservant les paramètres enregistrés. RomM reste en version 5.3.1.',
   },
   migrations: {
     up: async () => {},

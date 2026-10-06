@@ -1,5 +1,3 @@
-import type { manifest as filebrowserManifest } from 'filebrowser-startos/startos/manifest'
-import type { manifest as nextexplorerManifest } from 'nextexplorer-startos/startos/manifest'
 import { type T } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
 import { mainMountpoint, redisMountpoint } from './utils'
@@ -7,6 +5,11 @@ import { checkStorage } from './storageCopy'
 import type { LibraryStorage } from './storageState'
 export { storageShape, storageMigrationShape } from './storageState'
 export type { LibraryStorage, StorageMigration } from './storageState'
+
+type StorageProviderManifest = Omit<T.SDKManifest, 'id' | 'volumes'> & {
+  id: 'nextexplorer' | 'filebrowser'
+  volumes: ['data']
+}
 
 export function mountStorage(
   mounts: ReturnType<typeof sdk.Mounts.of>,
@@ -29,9 +32,7 @@ export function mountStorage(
     })
   }
 
-  return mounts.mountDependency<
-    typeof nextexplorerManifest | typeof filebrowserManifest
-  >({
+  return mounts.mountDependency<StorageProviderManifest>({
     dependencyId: storage.location,
     volumeId: 'data',
     subpath: `${storage.subpath}${libraryOnly ? '/library' : ''}`,

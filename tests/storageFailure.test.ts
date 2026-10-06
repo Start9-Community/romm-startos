@@ -18,7 +18,13 @@ import { storageState, type StorageMigration } from '../startos/storageState'
 
 test(
   'a failed copy persists its error and subsequent starts preserve files until explicitly retried',
-  { timeout: 10000 },
+  {
+    timeout: 10000,
+    skip:
+      process.platform === 'linux'
+        ? false
+        : 'SDK file writes require Linux flock and /proc',
+  },
   async (t) => {
     const root = await mkdtemp(join(tmpdir(), 'romm-failure-'))
     const source = join(root, 'main')

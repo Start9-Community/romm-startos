@@ -11,7 +11,7 @@
 
 RomM is a self-hosted manager for a personal game library: it scans a folder of ROMs, matches each one against online games databases for cover art and metadata, and serves the result as a browsable, playable web collection.
 
-This package runs RomM 5.3.1. The update includes security and stability fixes for account sessions, streaming, and folder mappings. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
+This package runs RomM 5.3.1. Package revision 5.3.1:1 uses StartOS SDK 3.0.2 and requires StartOS 0.4.0.2 or later. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
 
 ---
 
@@ -43,7 +43,7 @@ Two images run, one of them ours.
 
 Both build for `x86_64` and `aarch64`.
 
-The MariaDB image exists only because `sdk.Backups.withMysqlDump` invokes `mysqld`, `mysqladmin`, `mysqldump`, `mysql` and `mysql_install_db`, which the upstream image no longer installs under those names. Nothing else about the image is changed, and the daemon runs upstream's own entrypoint.
+The MariaDB image retains the legacy command aliases used by earlier package revisions. SDK 3's `sdk.Backups.withMariadbDump` uses MariaDB's native command names. Nothing else about the image is changed, and the daemon runs upstream's own entrypoint.
 
 The upstream RomM image is itself a supervisor: behind its single entrypoint it runs the web server, its own Valkey instance, the schema migrator, the filesystem watcher, and the background worker and scheduler. The package does not address those individually.
 
@@ -81,7 +81,7 @@ It holds the two MariaDB passwords and RomM's session-signing secret, generated 
 
 RomM 5.3.0 still defaults to the standard top-level layout when no structure is configured. It refuses a platform-first library without a template, or a configuration that still sets `filesystem.roms_folder` or `filesystem.firmware_folder`. The migration handles both cases. Fresh installs also record the standard layout explicitly for clarity.
 
-Database access, provider credentials and the Primary URL are passed as environment variables on every start. `store.json` preserves the provider credentials across restarts.
+Database access, provider credentials and the Primary URL are passed as environment variables on every start. `store.json` preserves the provider credentials across restarts. The root and nested provider schemas preserve unknown fields when SDK 3 validates and saves settings.
 
 The selected Primary URL is also stored here. When it is unset, the address watcher saves an available interface URL automatically. After that, **Set Primary URL** owns the choice, including when an address disappears.
 
@@ -95,7 +95,7 @@ With the library-only layout, `store.json` is visible to RomM at `/romm/store.js
 
 NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Quantum flavor) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running or publicly reachable for RomM to access the files. Internal storage needs neither service. File Browser requires `>=2.62.2:1 || >=#quantum:1.0.0:0`; NextExplorer requires `>=2.2.7:0`.
 
-Sibling package dependencies use `github:Start9Labs/<package>#next`, with exact commits pinned in `package-lock.json`. `.npmrc` sets `allow-git=all` for npm 12's Git dependency policy. The Quantum flavor shares the `filebrowser` package ID and volume interface; it does not require a second dependency alias.
+The SDK dependency builder publishes each provider's metadata and version range and enables it from the stored selection and copy state. Storage mounts use a local TypeScript contract for the `filebrowser` and `nextexplorer` package IDs and their `data` volume. The sibling packages are not npm build dependencies. The Quantum flavor shares the `filebrowser` package ID and volume interface; it does not require a second dependency alias.
 
 ## Network Access and Interfaces
 
@@ -208,6 +208,8 @@ A `mariadb` check still failing past its grace period means the data directory d
 ## Backups and Restore
 
 The strategy is mixed, and the difference matters: `main` is copied wholesale, while `database` is **dumped and replayed** rather than copied. Its files are never captured. Restore rebuilds the data directory from scratch, replays the dump into it, and hands back a database with only the accounts the restore created.
+
+SDK 3 writes a compressed logical dump named `romm.sql.gz`. StartOS restores the package version bundled with each backup, so earlier backups use their matching restore implementation. Upgrade the restored package afterward.
 
 That last point is why `database-grants` exists — the accounts the restore leaves behind are not the ones RomM connects as, nor the ones its views and triggers name as definer. The oneshot repairs both on the first start after a restore, with the passwords carried over in `store.json`.
 

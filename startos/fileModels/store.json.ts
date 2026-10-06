@@ -5,8 +5,11 @@ import { storageFields } from '../storageState'
 const provider = <T extends z.ZodRawShape>(value: T) =>
   z
     .discriminatedUnion('selection', [
-      z.object({ selection: z.literal('disabled') }),
-      z.object({ selection: z.literal('enabled'), value: z.object(value) }),
+      z.looseObject({ selection: z.literal('disabled') }),
+      z.looseObject({
+        selection: z.literal('enabled'),
+        value: z.looseObject(value),
+      }),
     ])
     .optional()
     .catch(undefined)

@@ -10,7 +10,7 @@ StartOS creates RomM's administrator account for you. Run **Set Admin Password**
 
 A web library for your game collection. Drop ROM files into a folder per console, run a scan, and RomM matches each file against online games databases to fill in cover art, release dates, descriptions, and box scans — then lets you browse, search, and play the supported ones in the browser.
 
-This package includes RomM 5.3.1, with security and stability fixes. See the [upstream release notes](https://github.com/rommapp/romm/releases/tag/5.3.1) for the full list of changes.
+This package includes RomM 5.3.1, with security and stability fixes, and requires StartOS 0.4.0.2 or later. See the [upstream release notes](https://github.com/rommapp/romm/releases/tag/5.3.1) for the full list of changes.
 
 RomM comes with its own database and cache; nothing else needs installing. With internal storage, your library, artwork, saves and database are included in RomM's StartOS backup. Shared ROM libraries require a separate file manager backup. Existing installations keep their detected layout during the upgrade.
 
@@ -72,6 +72,8 @@ To cancel, stop RomM and run **Cancel Library Copy**. This action appears only w
 Stop RomM and run **Recover Internal Library**. This selects the original internal library at `main:library` without needing the missing file manager. The action displays that path explicitly. It selects the original copy, so later changes in the file manager or newer retained internal copies will not be present. The action also clears an invalid or pending storage selection. If you already removed the original internal copy, restore a backup first.
 
 ### Backing up shared storage
+
+Older backups restore the package version they contain. After restoring, you can upgrade to the current package revision.
 
 Complete or cancel any pending storage copy first. Keep RomM stopped while backing up both RomM and the selected file manager. Avoid edits in the file manager until both backups finish. Restore both matching backups before starting RomM. RomM's backup includes saves and artwork, but does not include the active shared ROM library. Keep the entire selected folder, including `.romm-storage`, in the file manager backup.
 

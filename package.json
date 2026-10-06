@@ -1,32 +1,15 @@
 {
   "name": "romm-startos",
   "scripts": {
-    "build": "rm -rf ./javascript && ncc build startos/index.ts -o ./javascript",
-    "prettier": "prettier --write startos",
-    "check": "tsc --noEmit && tsc -p tests/tsconfig.json",
     "test": "node --import tsx --test tests/*.test.ts",
+    "test:types": "tsc -p tests/tsconfig.json",
     "test:runtime": "node --import tsx --test tests/runtime.integration.ts"
   },
   "dependencies": {
-    "@start9labs/start-sdk": "2.0.9",
-    "filebrowser-startos": "github:Start9Labs/filebrowser-startos#next",
-    "nextexplorer-startos": "github:Start9Labs/nextexplorer-startos#next",
+    "@start9labs/start-sdk": "3.0.2",
     "yaml": "2.9.0"
   },
-  "overrides": {
-    "@start9labs/start-sdk": "$@start9labs/start-sdk"
-  },
   "devDependencies": {
-    "@types/node": "^22.19.0",
-    "@vercel/ncc": "^0.38.4",
-    "prettier": "^3.6.2",
-    "tsx": "^4.23.15",
-    "typescript": "^6.0.3"
-  },
-  "prettier": {
-    "trailingComma": "all",
-    "tabWidth": 2,
-    "semi": false,
-    "singleQuote": true
+    "tsx": "^4.23.15"
   }
 }
