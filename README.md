@@ -11,7 +11,7 @@
 
 RomM is a self-hosted manager for a personal game library: it scans a folder of ROMs, matches each one against online games databases for cover art and metadata, and serves the result as a browsable, playable web collection.
 
-This package runs RomM 5.3.1. Package revision 5.3.1:1 uses StartOS SDK 3.0.2 and requires StartOS 0.4.0.2 or later. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
+This package runs RomM 5.3.1. Package version 5.3.1:0 uses StartOS SDK 3.0.3 and requires StartOS 0.4.0.2 or later. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
 
 ---
 
@@ -73,7 +73,7 @@ One model holds StartOS-side state. RomM's private YAML configuration records th
 
 | Model        | File              | Seeded                                    | Rewritten                                                |
 | ------------ | ----------------- | ----------------------------------------- | -------------------------------------------------------- |
-| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By configuration actions and automatic initial URL selection |
+| `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By configuration actions and library copy state updates |
 
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
 
@@ -83,17 +83,25 @@ RomM 5.3.0 still defaults to the standard top-level layout when no structure is 
 
 Database access, provider credentials and the Primary URL are passed as environment variables on every start. `store.json` preserves the provider credentials across restarts. The root and nested provider schemas preserve unknown fields when SDK 3 validates and saves settings.
 
-The selected Primary URL is also stored here. When it is unset, the address watcher saves an available interface URL automatically. After that, **Set Primary URL** owns the choice, including when an address disappears.
+The selected Primary URL is also stored here. The SDK Primary URL helper prompts for a choice when it is unset or its hostname disappears, prefilling an available public domain when possible. **Set Primary URL** saves the choice. The helper keeps existing choices until the user changes them, including when an address disappears.
 
 The `libraryStorage` selection is absent on existing and fresh installations, preserving the original internal layout. Successful copies record a service and folder. `storageMigration` records a UUID, source, destination, state and failure message. Storage fields remain opaque in the file model and are validated by their consumers: malformed values fail startup explicitly without invalidating credentials or making the recovery action unavailable.
 
-Normal startup reads the store reactively. During a copy, `main` subscribes only to `storageMigration`, so unrelated store writes do not abort it. The copy state is persisted before copying starts. Metadata, URL and password actions reject changes while a copy is pending; automatic URL selection waits until it finishes or is cancelled. Storage changes are queued while stopped and copy before the database or web interface starts.
+Normal startup reads the store reactively. During a copy, `main` subscribes only to `storageMigration`, so unrelated store writes do not abort it. The copy state is persisted before copying starts. Metadata, URL and password actions reject changes while a copy is pending; the Primary URL task waits until it finishes or is cancelled. Storage changes are queued while stopped and copy before the database or web interface starts.
 
 With the library-only layout, `store.json` is visible to RomM at `/romm/store.json`. Storage copies exclude it, and it is never shared with the file manager.
 
 ## Dependencies
 
-NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Quantum flavor) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running or publicly reachable for RomM to access the files. Internal storage needs neither service. File Browser requires `>=2.62.2:1 || >=#quantum:1.0.0:0`; NextExplorer requires `>=2.2.7:0`.
+NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Quantum flavor) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running or publicly reachable for RomM to access the files. Internal storage needs neither service.
+
+RomM needs the provider's `data` volume and files owned by UID/GID 1000. The supported version floors follow that contract:
+
+| Provider | Minimum version | Verified contract |
+| -------- | --------------- | ----------------- |
+| NextExplorer | `2.2.7:0` | [Initial package](https://github.com/Start9Labs/nextexplorer-startos/commit/04f7ecbfc31ad2205e0222dd7568fb881aa06c79): `data` at `/mnt`, owned by UID/GID 1000 |
+| File Browser | `2.52.0:0` | [Separate `data` volume](https://github.com/Start9Labs/filebrowser-startos/commit/fdf0462a676b45bc444efe16963e32d694a24bbb), [ownership setup](https://github.com/Start9Labs/filebrowser-startos/blob/47f3af1d8a912a209c53125d6b5cb21af38f1c68/startos/main.ts) and [upstream UID/GID 1000](https://github.com/filebrowser/filebrowser/blob/v2.52.0/Dockerfile) |
+| FileBrowser Quantum | `#quantum:1.5.2:0` | [Initial package](https://github.com/Start9Labs/filebrowser-quantum-startos/commit/e936a6c85a97b930b43cad5e9c0dd4898a2df567): `data` at `/srv`, owned by UID/GID 1000 |
 
 The SDK dependency builder publishes each provider's metadata and version range and enables it from the stored selection and copy state. Storage mounts use a local TypeScript contract for the `filebrowser` and `nextexplorer` package IDs and their `data` volume. The sibling packages are not npm build dependencies. The Quantum flavor shares the `filebrowser` package ID and volume interface; it does not require a second dependency alias.
 
@@ -107,7 +115,7 @@ One HTTP interface. MariaDB is reachable only inside the package's own network n
 
 RomM authenticates its own users; the interface adds no authentication of its own.
 
-The package stores a Primary URL chosen from the currently exported interface addresses and passes it to RomM as `ROMM_BASE_URL` for invite and password-reset links. StartOS terminates browser-facing TLS and forwards HTTP internally on port `8080`. If the selected address disappears, StartOS raises an important task while RomM keeps using the saved URL. Once a URL is saved, other address changes do not restart RomM; selecting a different Primary URL does.
+The package stores a Primary URL chosen from the currently exported interface addresses. The SDK helper follows that hostname when its port or scheme changes and passes the resolved URL to RomM as `ROMM_BASE_URL` for invite and password-reset links. StartOS terminates browser-facing TLS and forwards HTTP internally on port `8080`. **Open UI** prefers this resolved address when the current connection can reach it; StartOS can choose another reachable address. If the saved hostname disappears, StartOS raises an important task and the helper temporarily prefers an available public domain, then a `.local` address, then another available address. The saved choice remains intact. Unrelated address changes do not restart RomM while the resolved URL remains the same.
 
 ## Installation and First-Run Flow
 
@@ -149,7 +157,7 @@ Each provider is a disabled/enabled union, so its credentials are asked for only
 - **What it changes** — stores one currently exported URL in `store.json` and passes it to RomM as `ROMM_BASE_URL`.
 - **Cost** — saving a different URL restarts RomM, so the interface is briefly unavailable.
 - **Repeat safety** — safe to repeat. Selecting the same URL preserves the saved choice.
-- **Outputs** — a confirmation containing the saved URL.
+- **Outputs**: the selected URL is saved; there is no separate result message.
 
 ### Configure Library Storage
 
@@ -186,11 +194,11 @@ Two tasks cover the administrator password and the Primary URL. Only the passwor
 | Task                       | Severity    | Raised by                                                                                | Cleared by                                                                                                                |
 | -------------------------- | ----------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Run **Set Admin Password** | `critical`  | Init, whenever no password is stored                                                     | Running the action                                                                                                        |
-| Run **Set Primary URL**    | `important` | No saved URL and no available interface address, or the saved URL is no longer available | Selecting an available URL, the saved address returning, or an address becoming available for automatic initial selection |
+| Run **Set Primary URL**    | `important` | No saved URL, or its hostname is no longer available | Selecting an available URL or the saved hostname returning |
 
 `critical` blocks RomM from starting and suspends the ordinary Start/Stop controls, so a user reporting "there are no buttons" is looking at this. The check runs on every init rather than only at install.
 
-The Primary URL watcher runs on init and reacts to address and selection changes. Its task can return whenever the selected address disappears. It is `important` because RomM can run without a base URL; invite and password-reset links may still use a stale saved address until it is restored or replaced.
+The Primary URL task runs on init and reacts to address and selection changes. It skips updates while a library copy is queued, interrupted or failed. The helper follows the saved hostname when its port or scheme changes without rewriting the stored URL. Its task can return whenever the selected hostname disappears. It is `important` because RomM can use another available address temporarily. If no address is available, the helper retains the saved URL; links may be unreachable until an address returns or the choice is replaced.
 
 ## Health Checks
 

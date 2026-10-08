@@ -1,6 +1,7 @@
 import { type T } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
 import { storeJson } from './fileModels/store.json'
+import { i18n } from './i18n'
 import { storageShape, storageMigrationShape } from './storageState'
 
 async function storageProviderEnabled(
@@ -25,9 +26,9 @@ async function storageProviderEnabled(
 export const dependencies = sdk.Dependencies.of()
   .addDependency(
     sdk.Dependency.optional('nextexplorer', {
-      description: { en_US: 'Optional shared storage for the RomM library.' },
+      description: i18n('Optional shared storage for the RomM library.'),
       metadata: {
-        title: { en_US: 'NextExplorer' },
+        title: 'NextExplorer',
         icon: 'https://raw.githubusercontent.com/Start9Labs/nextexplorer-startos/853598c02f5604fb5f092420e68e7a7e68a50720/icon.svg',
       },
       kind: 'exists',
@@ -37,13 +38,13 @@ export const dependencies = sdk.Dependencies.of()
   )
   .addDependency(
     sdk.Dependency.optional('filebrowser', {
-      description: { en_US: 'Optional shared storage for the RomM library.' },
+      description: i18n('Optional shared storage for the RomM library.'),
       metadata: {
-        title: { en_US: 'File Browser' },
+        title: 'File Browser',
         icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-startos/b4f782cdc3ce629744d7948a240e591795d0dca8/icon.svg',
       },
       kind: 'exists',
-      versionRange: '>=2.62.2:1 || >=#quantum:1.0.0:0',
+      versionRange: '>=2.52.0:0 || >=#quantum:1.5.2:0',
       enabled: ({ effects }) => storageProviderEnabled('filebrowser', effects),
     }),
   )

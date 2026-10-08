@@ -58,26 +58,22 @@ test(
       () => {
         assert.deepEqual(manifest.dependencies, {
           nextexplorer: {
-            description: {
-              en_US: 'Optional shared storage for the RomM library.',
-            },
+            description: 'Optional shared storage for the RomM library.',
             optional: true,
             versionRange: '>=2.2.7:0',
             kind: 'exists',
             metadata: {
-              title: { en_US: 'NextExplorer' },
+              title: 'NextExplorer',
               icon: 'https://raw.githubusercontent.com/Start9Labs/nextexplorer-startos/853598c02f5604fb5f092420e68e7a7e68a50720/icon.svg',
             },
           },
           filebrowser: {
-            description: {
-              en_US: 'Optional shared storage for the RomM library.',
-            },
+            description: 'Optional shared storage for the RomM library.',
             optional: true,
-            versionRange: '>=2.62.2:1 || >=#quantum:1.0.0:0',
+            versionRange: '>=2.52.0:0 || >=#quantum:1.5.2:0',
             kind: 'exists',
             metadata: {
-              title: { en_US: 'File Browser' },
+              title: 'File Browser',
               icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-startos/b4f782cdc3ce629744d7948a240e591795d0dca8/icon.svg',
             },
           },
@@ -96,7 +92,7 @@ test(
     const fileRequirement: T.DependencyRequirement = {
       id: 'filebrowser',
       kind: 'exists',
-      versionRange: '>=2.62.2:1 || >=#quantum:1.0.0:0',
+      versionRange: '>=2.52.0:0 || >=#quantum:1.5.2:0',
     }
     const expectRequirements = async (expected: T.DependencyRequirement[]) => {
       const deadline = Date.now() + 3000

@@ -1,4 +1,3 @@
-import { type T } from '@start9labs/start-sdk'
 import { migrateConfigFile } from './configMigration'
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
@@ -16,29 +15,6 @@ export const adminEmail = 'admin@example.com'
 
 export const mainMountpoint = '/romm'
 export const redisMountpoint = '/redis-data'
-
-export function getUiUrls(effects: T.Effects): Promise<string[]> {
-  return sdk.host
-    .getOwn(
-      effects,
-      uiHostId,
-      (host) =>
-        host?.bindings[uiPort]?.interfaces[
-          uiInterfaceId
-        ]?.addressInfo.nonLocal.format('urlstring') ?? [],
-    )
-    .const()
-}
-
-export function getPreferredUiUrl(urls: string[]): string {
-  return (
-    urls.find((url) => url.startsWith('https://') && url.includes('.local')) ??
-    urls.find((url) => url.startsWith('https://')) ??
-    urls.find((url) => url.includes('.local')) ??
-    urls[0] ??
-    ''
-  )
-}
 
 export const migrateConfig = () => migrateConfigFile(sdk.volumes.main.path)
 

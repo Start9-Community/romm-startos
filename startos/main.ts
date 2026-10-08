@@ -1,6 +1,7 @@
 import { sdk } from './sdk'
 import { i18n } from './i18n'
 import { storeJson } from './fileModels/store.json'
+import { primaryUrl } from './primaryUrl'
 import { storageMigrationDaemons } from './storageMigration'
 import {
   checkLibraryStorage,
@@ -77,7 +78,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   }
   const store = await storeJson.read().const(effects)
   const { active } = storageState(store)
-  const primaryUrl = store?.primaryUrl
+  const baseUrl = await primaryUrl.bestUsable(effects).const()
   if (
     !store?.databaseRootPassword ||
     !store.databasePassword ||
@@ -170,7 +171,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
           ...(store.steamgriddb?.selection === 'enabled' && {
             STEAMGRIDDB_API_KEY: store.steamgriddb.value.apiKey,
           }),
-          ...(primaryUrl && { ROMM_BASE_URL: primaryUrl }),
+          ...(baseUrl && { ROMM_BASE_URL: baseUrl }),
         },
       },
       ready: {

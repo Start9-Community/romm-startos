@@ -6,7 +6,7 @@
     "test:runtime": "node --import tsx --test tests/runtime.integration.ts"
   },
   "dependencies": {
-    "@start9labs/start-sdk": "3.0.2",
+    "@start9labs/start-sdk": "3.0.3",
     "yaml": "2.9.0"
   },
   "devDependencies": {

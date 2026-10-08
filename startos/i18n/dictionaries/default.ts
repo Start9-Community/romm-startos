@@ -80,6 +80,7 @@ const dict = {
   'Partial destination files will be retained.': 119,
   'The selected file manager is no longer installed.': 120,
   'Library copy failed. Stop RomM and use Configure Library Storage to retry, or run Cancel Library Copy.': 121,
+  'Optional shared storage for the RomM library.': 122,
 } as const
 
 export type I18nKey = keyof typeof dict

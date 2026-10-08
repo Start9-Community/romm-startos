@@ -4,9 +4,9 @@ This package runs the official `rommapp/romm` all-in-one image unmodified, along
 
 ## Validating the package
 
-Use [start-cli 2.2.0](https://github.com/Start9Labs/start-technologies/releases/tag/start-cli/v2.2.0) or later to build and inspect this package. Older CLIs can silently drop SDK 3 dependency and image fields while packing. The Makefile rejects those versions.
+Use [start-cli 2.3.0](https://github.com/Start9Labs/start-technologies/releases/tag/start-cli/v2.3.0) or later to build and inspect this package. Older CLIs can drop SDK 3 manifest fields or pack prebuilt images for the wrong CPU architecture. The Makefile rejects those versions. Verify the architecture of the executables inside each packaged image as well as the manifest.
 
-Run `npm ci`, `npm test`, and `make x86 arm`. The SDK supplies the compiler, formatter, linter and bundler. The Makefile checks both package and test TypeScript before bundling. Use `make format` to format package sources.
+Run `npm ci`, `npm run test:types`, and `make x86 arm`. The SDK supplies the compiler, formatter, linter and bundler. The Makefile checks package TypeScript and runs `npm test` before bundling. Changes to the Makefile or behavioral tests trigger a new bundle. Use `make format` to format package sources.
 
 The persisted file-model tests require Linux because SDK 3 uses Linux filesystem locking. Run the full test suite on Linux in addition to any host checks. Run `npm run test:runtime` with Docker to verify account login, the RomM upgrade and shared library storage. Native StartOS install, upgrade and backup/restore checks remain separate acceptance steps.
 

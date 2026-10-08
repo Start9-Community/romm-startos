@@ -153,6 +153,29 @@ test('malformed storage does not poison unrelated settings or silently select a 
   assert.throws(() => storageState(store), /Invalid storage settings/)
 })
 
+test('reading storage selections preserves additional library and copy settings', () => {
+  const active = {
+    location: 'nextexplorer',
+    subpath: 'RomM',
+    extraLibrarySetting: { retained: true },
+  }
+  const job = {
+    id: randomUUID(),
+    source: active,
+    destination: {
+      location: 'filebrowser',
+      subpath: 'RomM',
+      extraDestinationSetting: ['retained'],
+    },
+    state: 'pending',
+    extraCopySetting: { retained: true },
+  }
+  assert.deepEqual(
+    storageState({ libraryStorage: active, storageMigration: job }),
+    { active, job },
+  )
+})
+
 test('cleanup removes only an inactive internal copy and preserves private files', async (t) => {
   const { source } = await fixture(t)
   await mkdir(join(source, 'assets'))

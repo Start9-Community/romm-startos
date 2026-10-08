@@ -81,6 +81,7 @@ export default {
     119: 'Los archivos parciales en el destino se conservarán.',
     120: 'El gestor de archivos seleccionado ya no está instalado.',
     121: 'La copia falló. Detén RomM y usa Configurar almacenamiento de la biblioteca para reintentar, o ejecuta Cancelar copia de biblioteca.',
+    122: 'Almacenamiento compartido opcional para la biblioteca de RomM.',
   },
   de_DE: {
     0: 'Datenbank',
@@ -162,6 +163,7 @@ export default {
     119: 'Teilweise kopierte Dateien am Ziel bleiben erhalten.',
     120: 'Der ausgewählte Dateimanager ist nicht mehr installiert.',
     121: 'Bibliothekskopie fehlgeschlagen. Stoppe RomM und verwende Bibliotheksspeicher konfigurieren, um es erneut zu versuchen, oder führe Bibliothekskopie stornieren aus.',
+    122: 'Optionaler gemeinsamer Speicher für die RomM-Bibliothek.',
   },
   pl_PL: {
     0: 'Baza danych',
@@ -243,6 +245,7 @@ export default {
     119: 'Częściowo skopiowane pliki docelowe zostaną zachowane.',
     120: 'Wybrany menedżer plików nie jest już zainstalowany.',
     121: 'Kopiowanie biblioteki nie powiodło się. Zatrzymaj RomM i użyj Skonfiguruj przechowywanie biblioteki, aby ponowić próbę, lub wybierz Anuluj kopiowanie biblioteki.',
+    122: 'Opcjonalna współdzielona pamięć dla biblioteki RomM.',
   },
   fr_FR: {
     0: 'Base de données',
@@ -324,5 +327,6 @@ export default {
     119: 'Les fichiers partiellement copiés à destination seront conservés.',
     120: "Le gestionnaire de fichiers sélectionné n'est plus installé.",
     121: 'Échec de la copie. Arrêtez RomM et utilisez Configurer le stockage de la bibliothèque pour réessayer, ou lancez Annuler la copie de la bibliothèque.',
+    122: 'Stockage partagé facultatif pour la bibliothèque RomM.',
   },
 } satisfies Record<string, LangDict>

@@ -5,12 +5,12 @@ export const storageFields = {
   storageMigration: z.unknown().optional(),
 }
 
-export const storageShape = z.object({
+export const storageShape = z.looseObject({
   location: z.enum(['internal', 'nextexplorer', 'filebrowser']),
   subpath: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/),
 })
 
-export const storageMigrationShape = z.object({
+export const storageMigrationShape = z.looseObject({
   id: z.string().uuid(),
   source: storageShape.optional(),
   destination: storageShape,
