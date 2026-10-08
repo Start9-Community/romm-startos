@@ -39,7 +39,7 @@ Two images run, one of them ours.
 | Image     | Source                                                                       | Entrypoint           |
 | --------- | ---------------------------------------------------------------------------- | -------------------- |
 | `romm`    | Upstream `rommapp/romm` all-in-one, unmodified, pinned by digest             | Upstream's, as PID 1 |
-| `mariadb` | `mariadb.Dockerfile` — the official MariaDB image plus five command symlinks | Upstream's, as PID 1 |
+| `mariadb` | Official `mariadb` image, unmodified, pinned by digest                         | Upstream's, as PID 1 |
 
 Both build for `x86_64` and `aarch64`.
 
@@ -101,7 +101,7 @@ RomM needs the provider's `data` volume and files owned by UID/GID 1000. The sup
 | -------- | --------------- | ----------------- |
 | NextExplorer | `2.2.7:0` | [Initial package](https://github.com/Start9Labs/nextexplorer-startos/commit/04f7ecbfc31ad2205e0222dd7568fb881aa06c79): `data` at `/mnt`, owned by UID/GID 1000 |
 | File Browser | `2.52.0:0` | [Separate `data` volume](https://github.com/Start9Labs/filebrowser-startos/commit/fdf0462a676b45bc444efe16963e32d694a24bbb), [ownership setup](https://github.com/Start9Labs/filebrowser-startos/blob/47f3af1d8a912a209c53125d6b5cb21af38f1c68/startos/main.ts) and [upstream UID/GID 1000](https://github.com/filebrowser/filebrowser/blob/v2.52.0/Dockerfile) |
-| FileBrowser Quantum | `#quantum:1.5.2:0` | [Initial package](https://github.com/Start9Labs/filebrowser-quantum-startos/commit/e936a6c85a97b930b43cad5e9c0dd4898a2df567): `data` at `/srv`, owned by UID/GID 1000 |
+| FileBrowser Quantum | any release that declares `.satisfies('2.63.23:3')` | `data` at `/srv`, owned by UID/GID 1000; matched by the File Browser range, so it needs no `#quantum` range of its own |
 
 The SDK dependency builder publishes each provider's metadata and version range and enables it from the stored selection and copy state. Storage mounts use a local TypeScript contract for the `filebrowser` and `nextexplorer` package IDs and their `data` volume. The sibling packages are not npm build dependencies. The Quantum flavor shares the `filebrowser` package ID and volume interface; it does not require a second dependency alias.
 
@@ -239,7 +239,7 @@ Complete or cancel any queued storage copy before backing up. For shared storage
 package_id: romm
 images:
   romm: rommapp/romm
-  mariadb: built from mariadb.Dockerfile
+  mariadb: mariadb
 architectures: [x86_64, aarch64]
 subcontainers: [romm-app-sub, romm-mariadb-sub]
 volumes:

@@ -21,7 +21,8 @@ export const manifest = setupManifest({
     },
     mariadb: {
       source: {
-        dockerBuild: { dockerfile: './mariadb.Dockerfile' },
+        dockerTag:
+          'mariadb:11.4.5@sha256:49117dcc565cf51aa57ac5fca59ab31213402ff0eae6ffc13c46a37b938f7e4b',
       },
       arch: ['x86_64', 'aarch64'],
     },

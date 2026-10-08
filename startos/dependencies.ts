@@ -40,11 +40,11 @@ export const dependencies = sdk.Dependencies.of()
     sdk.Dependency.optional('filebrowser', {
       description: i18n('Optional shared storage for the RomM library.'),
       metadata: {
-        title: 'File Browser',
-        icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-startos/b4f782cdc3ce629744d7948a240e591795d0dca8/icon.svg',
+        title: 'FileBrowser Quantum',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-quantum-startos/e936a6c85a97b930b43cad5e9c0dd4898a2df567/icon.svg',
       },
       kind: 'exists',
-      versionRange: '>=2.52.0:0 || >=#quantum:1.5.2:0',
+      versionRange: '>=2.52.0:0',
       enabled: ({ effects }) => storageProviderEnabled('filebrowser', effects),
     }),
   )

@@ -18,11 +18,7 @@ const manifest = await fs.readFile(
   'utf8',
 )
 const currentImage = manifest.match(/'([^']*rommapp\/romm:[^']+)'/)?.[1]
-const dockerfile = await fs.readFile(
-  new URL('../mariadb.Dockerfile', import.meta.url),
-  'utf8',
-)
-const databaseImage = dockerfile.match(/^FROM (\S+)$/m)?.[1]
+const databaseImage = manifest.match(/'(mariadb:[^']+)'/)?.[1]
 assert.ok(currentImage)
 assert.ok(databaseImage)
 

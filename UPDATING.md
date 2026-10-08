@@ -1,6 +1,6 @@
 # Updating the upstream version
 
-This package runs the official `rommapp/romm` all-in-one image unmodified, alongside a MariaDB image built from `mariadb.Dockerfile`.
+This package runs the official `rommapp/romm` all-in-one image unmodified, alongside the official `mariadb` image.
 
 ## Validating the package
 
@@ -22,7 +22,7 @@ When changing storage providers, verify their package IDs and `data` volume agai
 
   The current pin lives in `startos/manifest/index.ts` at `images.romm.source.dockerTag`, as `rommapp/romm:<version>@sha256:<digest>`.
 
-- **MariaDB** — the base image in `mariadb.Dockerfile` is pinned by digest and tracks the release line RomM tests against. Bump it only when RomM does; a major-line change moves the on-disk format and needs its own verification pass.
+- **MariaDB** — the `mariadb` image in `startos/manifest/index.ts` is pinned by digest and tracks the release line RomM tests against. Bump it only when RomM does; a major-line change moves the on-disk format and needs its own verification pass.
 
 ## Applying the bump
 

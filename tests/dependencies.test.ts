@@ -70,11 +70,11 @@ test(
           filebrowser: {
             description: 'Optional shared storage for the RomM library.',
             optional: true,
-            versionRange: '>=2.52.0:0 || >=#quantum:1.5.2:0',
+            versionRange: '>=2.52.0:0',
             kind: 'exists',
             metadata: {
-              title: 'File Browser',
-              icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-startos/b4f782cdc3ce629744d7948a240e591795d0dca8/icon.svg',
+              title: 'FileBrowser Quantum',
+              icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-quantum-startos/e936a6c85a97b930b43cad5e9c0dd4898a2df567/icon.svg',
             },
           },
         })
@@ -92,7 +92,7 @@ test(
     const fileRequirement: T.DependencyRequirement = {
       id: 'filebrowser',
       kind: 'exists',
-      versionRange: '>=2.52.0:0 || >=#quantum:1.5.2:0',
+      versionRange: '>=2.52.0:0',
     }
     const expectRequirements = async (expected: T.DependencyRequirement[]) => {
       const deadline = Date.now() + 3000
