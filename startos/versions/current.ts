@@ -1,24 +1,21 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
-import { migrateConfig } from '../utils'
 
 export const current = VersionInfo.of({
-  version: '5.3.0:0',
+  version: '5.3.1:0',
   releaseNotes: {
     en_US:
-      'Updates RomM to 5.3.0 and adds optional shared ROM storage with recovery, restartable copies and cleanup. Saves and artwork stay private. Existing libraries keep working without any changes. Full release notes: https://github.com/rommapp/romm/releases/tag/5.3.0',
+      'Updates RomM to 5.3.1 with security and stability fixes, including session revocation after credential changes and fixes for streaming and folder mappings. Full release notes: https://github.com/rommapp/romm/releases/tag/5.3.1',
     es_ES:
-      'Actualiza RomM a 5.3.0 y añade almacenamiento compartido opcional para ROMs, con recuperación, copias reiniciables y limpieza. Las partidas y las imágenes siguen siendo privadas. Las bibliotecas existentes siguen funcionando sin necesidad de cambios. Notas completas: https://github.com/rommapp/romm/releases/tag/5.3.0',
+      'Actualiza RomM a 5.3.1 con correcciones de seguridad y estabilidad, incluida la revocación de sesiones tras cambiar credenciales y mejoras en la transmisión y las carpetas. Notas completas: https://github.com/rommapp/romm/releases/tag/5.3.1',
     de_DE:
-      'Aktualisiert RomM auf 5.3.0 und bietet optionalen gemeinsamen ROM-Speicher mit Wiederherstellung, neu startbaren Kopien und Bereinigung. Spielstände und Bilder bleiben privat. Bestehende Bibliotheken funktionieren ohne Änderungen weiter. Vollständige Versionshinweise: https://github.com/rommapp/romm/releases/tag/5.3.0',
+      'Aktualisiert RomM auf 5.3.1 mit Sicherheits- und Stabilitätskorrekturen, einschließlich der Aufhebung von Sitzungen nach einer Änderung der Zugangsdaten sowie Korrekturen für Streaming und Ordnerzuordnungen. Vollständige Versionshinweise: https://github.com/rommapp/romm/releases/tag/5.3.1',
     pl_PL:
-      'Aktualizuje RomM do wersji 5.3.0 i dodaje opcjonalny współdzielony magazyn ROM-ów z odzyskiwaniem, ponawianiem kopii i usuwaniem starych kopii. Zapisy gier i grafiki pozostają prywatne. Istniejące biblioteki działają nadal bez potrzeby wprowadzania zmian. Pełne informacje: https://github.com/rommapp/romm/releases/tag/5.3.0',
+      'Aktualizuje RomM do wersji 5.3.1 z poprawkami bezpieczeństwa i stabilności, w tym unieważnianiem sesji po zmianie danych logowania oraz poprawkami transmisji i mapowania folderów. Pełne informacje: https://github.com/rommapp/romm/releases/tag/5.3.1',
     fr_FR:
-      'Met RomM à jour vers la version 5.3.0 et ajoute un stockage partagé optionnel des ROMs avec récupération, copies redémarrables et nettoyage. Les sauvegardes de jeux et les illustrations restent privées. Les bibliothèques existantes continuent de fonctionner sans aucune modification. Notes complètes : https://github.com/rommapp/romm/releases/tag/5.3.0',
+      'Met RomM à jour vers la version 5.3.1 avec des correctifs de sécurité et de stabilité, notamment la révocation des sessions après un changement des identifiants et des corrections pour le streaming et les dossiers. Notes complètes : https://github.com/rommapp/romm/releases/tag/5.3.1',
   },
   migrations: {
-    up: async () => {
-      await migrateConfig()
-    },
+    up: async () => {},
     down: IMPOSSIBLE,
   },
 })

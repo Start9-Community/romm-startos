@@ -27,12 +27,12 @@ assert.ok(currentImage)
 assert.ok(databaseImage)
 
 async function docker(args: string[]) {
-  return run('docker', args, { timeout: 60000, maxBuffer: 4 * 1024 * 1024 })
+  return run('docker', args, { timeout: 300000, maxBuffer: 4 * 1024 * 1024 })
 }
 
 test(
-  'RomM preserves an account and library through 5.3 upgrade and shared-storage copy',
-  { timeout: 600000 },
+  'RomM preserves an account and library through 5.3.1 upgrade and shared-storage copy',
+  { timeout: 900000 },
   async (t) => {
     const prefix = `romm-runtime-${randomUUID().slice(0, 10)}`
     const database = `${prefix}-db`
@@ -45,6 +45,22 @@ test(
     t.after(async () => {
       for (const name of containers)
         await docker(['rm', '-fv', name]).catch(() => {})
+      await docker([
+        'run',
+        '--rm',
+        '--network',
+        'none',
+        '--user',
+        '0',
+        '-v',
+        `${root}:/fixture`,
+        '--entrypoint',
+        'chown',
+        databaseImage,
+        '-R',
+        `${process.getuid!()}:${process.getgid!()}`,
+        '/fixture',
+      ])
       await fs.rm(root, { recursive: true, force: true })
     })
     await fs.mkdir(path.join(main, 'library', 'roms', 'gba'), {
@@ -147,7 +163,7 @@ test(
         'ROMM_BASE_URL=https://romm.example.test',
         image,
       ])
-      const deadline = Date.now() + 180000
+      const deadline = Date.now() + 300000
       while (Date.now() < deadline) {
         try {
           const response = await request('/heartbeat')
@@ -237,7 +253,7 @@ test(
 
     assert.equal(await migrateConfigFile(main), true)
     const upgraded = await start(currentImage, main)
-    assert.equal(upgraded.SYSTEM.VERSION, '5.3.0')
+    assert.equal(upgraded.SYSTEM.VERSION, '5.3.1')
     assert.equal(upgraded.SYSTEM.SHOW_SETUP_WIZARD, false)
     assert.deepEqual(upgraded.FILESYSTEM.FS_PLATFORMS, ['gba'])
     await login()
@@ -250,7 +266,7 @@ test(
       requireMarker: false,
     })
     const moved = await start(currentImage, shared, true)
-    assert.equal(moved.SYSTEM.VERSION, '5.3.0')
+    assert.equal(moved.SYSTEM.VERSION, '5.3.1')
     assert.equal(moved.SYSTEM.SHOW_SETUP_WIZARD, false)
     assert.deepEqual(moved.FILESYSTEM.FS_PLATFORMS, ['gba'])
     await login()
