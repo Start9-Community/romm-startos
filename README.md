@@ -38,10 +38,12 @@ Two images run, one of them ours.
 
 | Image     | Source                                                                       | Entrypoint           |
 | --------- | ---------------------------------------------------------------------------- | -------------------- |
-| `romm`    | Upstream `rommapp/romm` all-in-one, unmodified, pinned by digest             | Upstream's, as PID 1 |
+| `romm`    | Upstream `rommapp/romm` all-in-one, pinned by digest, + root `Dockerfile`    | Upstream's, as PID 1 |
 | `mariadb` | Official `mariadb` image, unmodified, pinned by digest                         | Upstream's, as PID 1 |
 
 Both build for `x86_64` and `aarch64`.
+
+The root `Dockerfile` upgrades the RomM image's CA store and copies it over the venv's certifi bundle, a temporary layer that comes out once upstream ships an image built on a fixed store.
 
 The MariaDB image retains the legacy command aliases used by earlier package revisions. SDK 3's `sdk.Backups.withMariadbDump` uses MariaDB's native command names. Nothing else about the image is changed, and the daemon runs upstream's own entrypoint.
 
