@@ -1,3 +1,4 @@
+import { T } from '@start9labs/start-sdk'
 import { sdk } from './sdk'
 import { i18n } from './i18n'
 import { storeJson } from './fileModels/store.json'
@@ -92,6 +93,28 @@ export const main = sdk.setupMain(async ({ effects }) => {
 
   await checkLibraryStorage(effects, active)
 
+  let smtp: T.SmtpValue | null = null
+  if (store.smtp?.selection === 'system') {
+    const systemSmtp = await sdk.getSystemSmtp(effects).const()
+    if (systemSmtp) {
+      smtp = {
+        ...systemSmtp,
+        from: store.smtp.value.customFrom || systemSmtp.from,
+      }
+    }
+  } else if (store.smtp?.selection === 'custom') {
+    const { host, from, username, password, security } =
+      store.smtp.value.provider.value
+    smtp = {
+      host,
+      from,
+      username,
+      password,
+      port: Number(security.value.port),
+      security: security.selection,
+    }
+  }
+
   const mariadb = sdk.SubContainer.of(
     effects,
     { imageId: 'mariadb' },
@@ -171,17 +194,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
           ...(store.steamgriddb?.selection === 'enabled' && {
             STEAMGRIDDB_API_KEY: store.steamgriddb.value.apiKey,
           }),
-          ...(store.smtp?.selection === 'enabled' && {
-            SMTP_HOST: store.smtp.value.host,
-            SMTP_PORT: String(store.smtp.value.port),
-            SMTP_SECURITY: store.smtp.value.security,
-            SMTP_FROM: store.smtp.value.from,
-            ...(store.smtp.value.username && {
-              SMTP_USERNAME: store.smtp.value.username,
-            }),
-            ...(store.smtp.value.password && {
-              SMTP_PASSWORD: store.smtp.value.password,
-            }),
+          ...(smtp && {
+            SMTP_HOST: smtp.host,
+            SMTP_PORT: String(smtp.port),
+            SMTP_SECURITY: smtp.security,
+            SMTP_FROM: smtp.from,
+            ...(smtp.username && { SMTP_USERNAME: smtp.username }),
+            ...(smtp.password && { SMTP_PASSWORD: smtp.password }),
           }),
           ...(baseUrl && { ROMM_BASE_URL: baseUrl }),
         },

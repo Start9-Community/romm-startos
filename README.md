@@ -155,11 +155,13 @@ Each provider is a disabled/enabled union, so its credentials are asked for only
 
 ### Configure Email
 
-- **When to run it** — to let RomM email password-reset links and notifications, or to change or remove the SMTP server.
+- **When to run it** — to let RomM email password-reset links and notifications. Choose disabled, the server's system SMTP settings, or custom SMTP with provider presets.
 - **What it changes** — the `smtp` key in `store.json`, passed to RomM as `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_FROM` and, when set, `SMTP_USERNAME` and `SMTP_PASSWORD`.
 - **Cost** — saving restarts RomM, so the interface is briefly unavailable.
 - **Repeat safety** — fully idempotent. The form is pre-filled with what is already saved.
 - **Outputs** — none.
+
+System mode follows changes to the server's SMTP settings and optionally overrides the sender address. If the server has no SMTP settings, email stays off. Custom mode supports TLS and STARTTLS using the SDK's standard SMTP form.
 
 Reset links point at the Primary URL. The admin account is created with the placeholder address `admin@example.com`; it receives reset email only once its owner changes it in RomM's profile page.
 

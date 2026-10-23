@@ -39,7 +39,7 @@ Everything happens here: browsing and searching the collection, editing what a s
   If you change the `admin` password from inside RomM instead, this action can no longer replace it — StartOS no longer knows the current one, and the action will tell you so. Use RomM's own profile page from then on.
 
 - **Configure Metadata Providers** — turns each of IGDB, MobyGames, and SteamGridDB on or off, asking for that provider's credentials only when you turn it on. IGDB covers the most ground and is the one to start with; MobyGames fills in descriptions for older titles, and SteamGridDB adds artwork. All three are free to sign up for. Saving restarts RomM.
-- **Configure Email** — connects RomM to your SMTP server so it can email password-reset links and send notifications by email. Reset links use your Primary URL. Change the admin account's email address in RomM's profile page if you want its reset links delivered. Saving restarts RomM.
+- **Configure Email** — enables password-reset links and notifications by email. Choose your StartOS server's system SMTP settings, enter custom SMTP settings, or disable email. Custom SMTP supports TLS and STARTTLS. Reset links use your Primary URL. Change the admin account's email address in RomM's profile page if you want its reset links delivered. Saving restarts RomM.
 
 - **Set Primary URL**: chooses the address RomM uses for invite and password-reset links. RomM follows changes to that hostname's port or HTTPS setting. Changing the effective address restarts RomM. If the saved hostname disappears, StartOS prompts you to choose another one and RomM temporarily uses another available address. Your saved choice stays intact. If no address is available, links may remain unreachable until an address returns.
 
