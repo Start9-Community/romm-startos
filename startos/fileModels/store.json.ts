@@ -1,4 +1,4 @@
-import { FileHelper, z } from '@start9labs/start-sdk'
+import { FileHelper, smtpShape, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
 import { storageFields } from '../storageState'
 
@@ -24,6 +24,7 @@ const shape = z.looseObject({
   igdb: provider({ clientId: z.string(), clientSecret: z.string() }),
   mobygames: provider({ apiKey: z.string() }),
   steamgriddb: provider({ apiKey: z.string() }),
+  smtp: smtpShape.optional(),
 })
 
 export const storeJson = FileHelper.json(

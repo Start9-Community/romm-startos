@@ -11,7 +11,7 @@
 
 RomM is a self-hosted manager for a personal game library: it scans a folder of ROMs, matches each one against online games databases for cover art and metadata, and serves the result as a browsable, playable web collection.
 
-This package runs RomM 5.3.1. Package version 5.3.1:0 uses StartOS SDK 3.0.3 and requires StartOS 0.4.0.2 or later. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
+This package runs RomM 5.4.1 and requires StartOS 0.4.0.2 or later. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
 
 ---
 
@@ -36,10 +36,10 @@ This package runs RomM 5.3.1. Package version 5.3.1:0 uses StartOS SDK 3.0.3 and
 
 Two images run, one of them ours.
 
-| Image     | Source                                                                       | Entrypoint           |
-| --------- | ---------------------------------------------------------------------------- | -------------------- |
-| `romm`    | Upstream `rommapp/romm` all-in-one, pinned by digest, + root `Dockerfile`    | Upstream's, as PID 1 |
-| `mariadb` | Official `mariadb` image, unmodified, pinned by digest                         | Upstream's, as PID 1 |
+| Image     | Source                                                                    | Entrypoint           |
+| --------- | ------------------------------------------------------------------------- | -------------------- |
+| `romm`    | Upstream `rommapp/romm` all-in-one, pinned by digest, + root `Dockerfile` | Upstream's, as PID 1 |
+| `mariadb` | Official `mariadb` image, unmodified, pinned by digest                    | Upstream's, as PID 1 |
 
 Both build for `x86_64` and `aarch64`.
 
@@ -73,8 +73,8 @@ Returning to internal storage copies the current library into `main:storage/romm
 
 One model holds StartOS-side state. RomM's private YAML configuration records the library's filesystem structure.
 
-| Model        | File              | Seeded                                    | Rewritten                                                |
-| ------------ | ----------------- | ----------------------------------------- | -------------------------------------------------------- |
+| Model        | File              | Seeded                                    | Rewritten                                               |
+| ------------ | ----------------- | ----------------------------------------- | ------------------------------------------------------- |
 | `store.json` | `main:store.json` | At install, and by **Set Admin Password** | By configuration actions and library copy state updates |
 
 It holds the two MariaDB passwords and RomM's session-signing secret, generated once on a fresh install and never regenerated — a restore keeps the ones that came with the backup, which is what lets the restored database still be readable. It also holds the admin password and the metadata-provider selections, each written by the action that owns it.
@@ -83,7 +83,7 @@ It holds the two MariaDB passwords and RomM's session-signing secret, generated 
 
 RomM 5.3.0 still defaults to the standard top-level layout when no structure is configured. It refuses a platform-first library without a template, or a configuration that still sets `filesystem.roms_folder` or `filesystem.firmware_folder`. The migration handles both cases. Fresh installs also record the standard layout explicitly for clarity.
 
-Database access, provider credentials and the Primary URL are passed as environment variables on every start. `store.json` preserves the provider credentials across restarts. The root and nested provider schemas preserve unknown fields when SDK 3 validates and saves settings.
+Database access, provider credentials, email settings and the Primary URL are passed as environment variables on every start. `store.json` preserves the provider credentials and email settings across restarts. The root and nested provider schemas preserve unknown fields when SDK 3 validates and saves settings.
 
 The selected Primary URL is also stored here. The SDK Primary URL helper prompts for a choice when it is unset or its hostname disappears, prefilling an available public domain when possible. **Set Primary URL** saves the choice. The helper keeps existing choices until the user changes them, including when an address disappears.
 
@@ -99,11 +99,11 @@ NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Qua
 
 RomM needs the provider's `data` volume and files owned by UID/GID 1000. The supported version floors follow that contract:
 
-| Provider | Minimum version | Verified contract |
-| -------- | --------------- | ----------------- |
-| NextExplorer | `2.2.7:0` | [Initial package](https://github.com/Start9Labs/nextexplorer-startos/commit/04f7ecbfc31ad2205e0222dd7568fb881aa06c79): `data` at `/mnt`, owned by UID/GID 1000 |
-| File Browser | `2.52.0:0` | [Separate `data` volume](https://github.com/Start9Labs/filebrowser-startos/commit/fdf0462a676b45bc444efe16963e32d694a24bbb), [ownership setup](https://github.com/Start9Labs/filebrowser-startos/blob/47f3af1d8a912a209c53125d6b5cb21af38f1c68/startos/main.ts) and [upstream UID/GID 1000](https://github.com/filebrowser/filebrowser/blob/v2.52.0/Dockerfile) |
-| FileBrowser Quantum | any release that declares `.satisfies('2.63.23:3')` | `data` at `/srv`, owned by UID/GID 1000; matched by the File Browser range, so it needs no `#quantum` range of its own |
+| Provider            | Minimum version                                     | Verified contract                                                                                                                                                                                                                                                                                                                                               |
+| ------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NextExplorer        | `2.2.7:0`                                           | [Initial package](https://github.com/Start9Labs/nextexplorer-startos/commit/04f7ecbfc31ad2205e0222dd7568fb881aa06c79): `data` at `/mnt`, owned by UID/GID 1000                                                                                                                                                                                                  |
+| File Browser        | `2.52.0:0`                                          | [Separate `data` volume](https://github.com/Start9Labs/filebrowser-startos/commit/fdf0462a676b45bc444efe16963e32d694a24bbb), [ownership setup](https://github.com/Start9Labs/filebrowser-startos/blob/47f3af1d8a912a209c53125d6b5cb21af38f1c68/startos/main.ts) and [upstream UID/GID 1000](https://github.com/filebrowser/filebrowser/blob/v2.52.0/Dockerfile) |
+| FileBrowser Quantum | any release that declares `.satisfies('2.63.23:3')` | `data` at `/srv`, owned by UID/GID 1000; matched by the File Browser range, so it needs no `#quantum` range of its own                                                                                                                                                                                                                                          |
 
 The SDK dependency builder publishes each provider's metadata and version range and enables it from the stored selection and copy state. Storage mounts use a local TypeScript contract for the `filebrowser` and `nextexplorer` package IDs and their `data` volume. The sibling packages are not npm build dependencies. The Quantum flavor shares the `filebrowser` package ID and volume interface; it does not require a second dependency alias.
 
@@ -117,19 +117,19 @@ One HTTP interface. MariaDB is reachable only inside the package's own network n
 
 RomM authenticates its own users; the interface adds no authentication of its own.
 
-The package stores a Primary URL chosen from the currently exported interface addresses. The SDK helper follows that hostname when its port or scheme changes and passes the resolved URL to RomM as `ROMM_BASE_URL` for invite and password-reset links. StartOS terminates browser-facing TLS and forwards HTTP internally on port `8080`. **Open UI** prefers this resolved address when the current connection can reach it; StartOS can choose another reachable address. If the saved hostname disappears, StartOS raises an important task and the helper temporarily prefers an available public domain, then a `.local` address, then another available address. The saved choice remains intact. Unrelated address changes do not restart RomM while the resolved URL remains the same.
+The package stores a Primary URL chosen from the currently exported interface addresses. The SDK helper follows that hostname when its port or scheme changes and passes the resolved URL to RomM as `ROMM_BASE_URL` for invite and password-reset links. StartOS terminates browser-facing TLS and forwards HTTP internally on port `8080`. The proxy connects from the container bridge, a private address RomM's default `FORWARDED_ALLOW_IPS` trusts, so RomM's audit log and rate limiting see each client's own address. **Open UI** prefers this resolved address when the current connection can reach it; StartOS can choose another reachable address. If the saved hostname disappears, StartOS raises an important task and the helper temporarily prefers an available public domain, then a `.local` address, then another available address. The saved choice remains intact. Unrelated address changes do not restart RomM while the resolved URL remains the same.
 
 ## Installation and First-Run Flow
 
 Install generates the database passwords and the session secret, then raises a `critical` task pointing at **Set Admin Password**. RomM will not start until that has been run, so the credential exists and has been shown to the user before the service comes up.
 
-On first start MariaDB initialises its data directory, the `database-grants` oneshot makes sure the `romm` account exists for the hosts RomM connects from, RomM applies its own schema migrations, and then the `admin-account` oneshot creates the administrator inside RomM. The whole sequence takes several minutes on first run and the health checks stay red throughout; that is expected.
+On first start MariaDB initialises its data directory, the `database-grants` oneshot makes sure the `romm` account exists for the hosts RomM connects from, RomM applies its own schema migrations, and then the `admin-account` oneshot creates the administrator inside RomM. The whole sequence takes several minutes on first run. RomM opens its port only once its migrations finish, so the `romm` check reports that migrations are running until then.
 
 **The package pre-empts RomM's own setup wizard.** Upstream shows it to whoever reaches the address first and lets them claim the instance; here the account already exists by the time the interface is reachable, so the wizard never appears.
 
 ## Actions
 
-Seven actions.
+Eight actions.
 
 ### Set Admin Password
 
@@ -152,6 +152,18 @@ A rotation authenticates as the admin with the password in `store.json` and call
 - **Outputs** — none.
 
 Each provider is a disabled/enabled union, so its credentials are asked for only when it is turned on, and turning one off is a single choice rather than a set of fields to blank.
+
+### Configure Email
+
+- **When to run it** — to let RomM email password-reset links and notifications, using the server's system SMTP settings or a custom SMTP server with provider presets, or to turn email off.
+- **What it changes** — the `smtp` key in `store.json`, passed to RomM as `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_FROM` and, when set, `SMTP_USERNAME` and `SMTP_PASSWORD`.
+- **Cost** — saving restarts RomM, so the interface is briefly unavailable.
+- **Repeat safety** — fully idempotent. The form is pre-filled with what is already saved.
+- **Outputs** — none.
+
+System mode follows changes to the server's SMTP settings and optionally overrides the sender address. If the server has no SMTP settings, email stays off. Custom mode supports TLS and STARTTLS using the SDK's standard SMTP form.
+
+Reset links point at the Primary URL. The admin account is created with the placeholder address `admin@example.com`; it receives reset email only once its owner changes it in RomM's profile page.
 
 ### Set Primary URL
 
@@ -193,9 +205,9 @@ Run while stopped, after verifying the active library and taking a backup. The a
 
 Two tasks cover the administrator password and the Primary URL. Only the password task blocks startup.
 
-| Task                       | Severity    | Raised by                                                                                | Cleared by                                                                                                                |
-| -------------------------- | ----------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Run **Set Admin Password** | `critical`  | Init, whenever no password is stored                                                     | Running the action                                                                                                        |
+| Task                       | Severity    | Raised by                                            | Cleared by                                                 |
+| -------------------------- | ----------- | ---------------------------------------------------- | ---------------------------------------------------------- |
+| Run **Set Admin Password** | `critical`  | Init, whenever no password is stored                 | Running the action                                         |
 | Run **Set Primary URL**    | `important` | No saved URL, or its hostname is no longer available | Selecting an available URL or the saved hostname returning |
 
 `critical` blocks RomM from starting and suspends the ordinary Start/Stop controls, so a user reporting "there are no buttons" is looking at this. The check runs on every init rather than only at install.
@@ -206,14 +218,14 @@ The Primary URL task runs on init and reacts to address and selection changes. I
 
 Two checks and one oneshot between them.
 
-| Check     | Probes                 | Grace period |
-| --------- | ---------------------- | ------------ |
-| `mariadb` | Port 3306 is listening | 120s         |
-| `romm`    | Port 8080 is listening | 180s         |
+| Check     | Probes                                                  | Grace period |
+| --------- | ------------------------------------------------------- | ------------ |
+| `mariadb` | Port 3306 is listening                                  | 120s         |
+| `romm`    | Port 8080 is listening, or `alembic upgrade` is running | 180s         |
 
 `romm` is gated behind the `database-grants` oneshot, which is in turn gated behind `mariadb` — so RomM never starts against a database it cannot log in to. The `admin-account` oneshot runs after `romm` is ready, and is a no-op once RomM reports that it has users.
 
-A `mariadb` check still failing past its grace period means the data directory did not come up: its logs carry the reason, usually a version mismatch after a MariaDB bump or an interrupted initialisation. A `romm` check still failing past its own means either the schema migration is still running — normal after an upstream version bump on a large library — or RomM could not authenticate, in which case the `database-grants` oneshot's output says which password it fell back to.
+A `mariadb` check still failing past its grace period means the data directory did not come up: its logs carry the reason, usually a version mismatch after a MariaDB bump or an interrupted initialisation. RomM's entrypoint runs its schema migrations before it opens port 8080, so while `alembic upgrade` is running the check stays `starting` with a message saying so, however long that takes. A `romm` check failing past its grace period with no migration running means RomM could not start — most often it could not authenticate to MariaDB, in which case the `database-grants` oneshot's output says which password it fell back to.
 
 ## Backups and Restore
 
@@ -232,7 +244,7 @@ Complete or cancel any queued storage copy before backing up. For shared storage
 1. **Shared storage copies require an empty destination and enough space for a full copy.** Original files are retained until explicitly cleaned up; symlinks are rejected. Cross-mount hardlinks to private assets become copies.
 2. **RomM's bundled Valkey is not reachable or configurable**, and has no health check of its own — a Valkey failure surfaces as RomM misbehaving rather than as a red check.
 3. **The database is not reachable from outside the package.** There is no exported interface for it and no action that opens a shell to it.
-4. **Saving metadata-provider credentials restarts RomM.** They are delivered as environment variables, which RomM reads only at launch.
+4. **Saving metadata-provider credentials or email settings restarts RomM.** They are delivered as environment variables, which RomM reads only at launch.
 5. **Shared libraries need matching backups of RomM and the file manager.** RomM's own backup captures private storage and retained internal copies only.
 
 ## Quick Reference for AI Consumers
@@ -265,6 +277,12 @@ startos_managed_env_vars:
   - IGDB_CLIENT_SECRET
   - MOBYGAMES_API_KEY
   - STEAMGRIDDB_API_KEY
+  - SMTP_HOST
+  - SMTP_PORT
+  - SMTP_SECURITY
+  - SMTP_FROM
+  - SMTP_USERNAME
+  - SMTP_PASSWORD
   - ADMIN_USERNAME
   - ADMIN_EMAIL
   - ADMIN_PASSWORD
@@ -276,6 +294,7 @@ interfaces:
 actions:
   - set-admin-password
   - configure
+  - configure-email
   - set-primary-url
   - set-library-storage
   - cleanup-library-storage

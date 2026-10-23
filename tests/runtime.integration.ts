@@ -27,7 +27,7 @@ async function docker(args: string[]) {
 }
 
 test(
-  'RomM preserves an account and library through 5.3.1 upgrade and shared-storage copy',
+  'RomM preserves an account and library through 5.4.1 upgrade and shared-storage copy',
   { timeout: 900000 },
   async (t) => {
     const prefix = `romm-runtime-${randomUUID().slice(0, 10)}`
@@ -249,7 +249,7 @@ test(
 
     assert.equal(await migrateConfigFile(main), true)
     const upgraded = await start(currentImage, main)
-    assert.equal(upgraded.SYSTEM.VERSION, '5.3.1')
+    assert.equal(upgraded.SYSTEM.VERSION, '5.4.1')
     assert.equal(upgraded.SYSTEM.SHOW_SETUP_WIZARD, false)
     assert.deepEqual(upgraded.FILESYSTEM.FS_PLATFORMS, ['gba'])
     await login()
@@ -262,7 +262,7 @@ test(
       requireMarker: false,
     })
     const moved = await start(currentImage, shared, true)
-    assert.equal(moved.SYSTEM.VERSION, '5.3.1')
+    assert.equal(moved.SYSTEM.VERSION, '5.4.1')
     assert.equal(moved.SYSTEM.SHOW_SETUP_WIZARD, false)
     assert.deepEqual(moved.FILESYSTEM.FS_PLATFORMS, ['gba'])
     await login()

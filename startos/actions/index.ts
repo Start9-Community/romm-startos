@@ -1,5 +1,6 @@
 import { sdk } from '../sdk'
 import { configure } from './configure'
+import { configureEmail } from './configureEmail'
 import { setAdminPassword } from './setAdminPassword'
 import { setPrimaryUrl } from './setPrimaryUrl'
 import { setLibraryStorage } from './setLibraryStorage'
@@ -10,6 +11,7 @@ import { cancelLibraryCopy } from './cancelLibraryCopy'
 export const actions = sdk.Actions.of()
   .addAction(setAdminPassword)
   .addAction(configure)
+  .addAction(configureEmail)
   .addAction(setPrimaryUrl)
   .addAction(setLibraryStorage)
   .addAction(recoverLibraryStorage)
