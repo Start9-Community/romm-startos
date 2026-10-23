@@ -155,7 +155,7 @@ Each provider is a disabled/enabled union, so its credentials are asked for only
 
 ### Configure Email
 
-- **When to run it** — to let RomM email password-reset links and notifications. Choose disabled, the server's system SMTP settings, or custom SMTP with provider presets.
+- **When to run it** — to let RomM email password-reset links and notifications, using the server's system SMTP settings or a custom SMTP server with provider presets, or to turn email off.
 - **What it changes** — the `smtp` key in `store.json`, passed to RomM as `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_FROM` and, when set, `SMTP_USERNAME` and `SMTP_PASSWORD`.
 - **Cost** — saving restarts RomM, so the interface is briefly unavailable.
 - **Repeat safety** — fully idempotent. The form is pre-filled with what is already saved.
