@@ -20,13 +20,13 @@ When changing storage providers, verify their package IDs and `data` volume agai
   gh release view -R rommapp/romm --json tagName -q .tagName
   ```
 
-  The current pin lives in `startos/manifest/index.ts` at `images.romm.source.dockerTag`, as `rommapp/romm:<version>@sha256:<digest>`.
+  The current pin lives in `startos/manifest/index.ts` at `images.romm.source.dockerBuild.buildArgs.IMAGE`, as `rommapp/romm:<version>@sha256:<digest>`; the root `Dockerfile` builds on it.
 
-- **MariaDB** — the `mariadb` image in `startos/manifest/index.ts` is pinned by digest and tracks the release line RomM tests against. Bump it only when RomM does; a major-line change moves the on-disk format and needs its own verification pass.
+- **MariaDB** — the `mariadb` image in `startos/manifest/index.ts` is pinned by digest and must stay inside the range RomM's `migrate-mariadb` workflow covers (`.github/workflows/migrations.yml`): its oldest supported LTS leg up to its newest pin. Move it only when RomM raises that floor past it; a major-line change moves the on-disk format and needs its own verification pass.
 
 ## Applying the bump
 
-- Resolve the new digest and set both halves of `dockerTag` together — the tag alone is mutable:
+- Resolve the new digest and set both halves of `IMAGE` together — the tag alone is mutable:
 
   ```sh
   docker buildx imagetools inspect rommapp/romm:<version> --format '{{ .Manifest.Digest }}'
@@ -36,4 +36,5 @@ When changing storage providers, verify their package IDs and `data` volume agai
 - Verify the selected `ROMM_BASE_URL` appears in generated invite and password-reset links.
 - Confirm the new image index contains native `linux/amd64` and `linux/arm64` manifests.
 - Confirm the mount points `/romm` and `/redis-data` are still the paths the image uses, and that RomM still reaches its database over TCP as `romm@127.0.0.1`.
+- Confirm `docker/init_scripts/init` still runs `alembic upgrade head` before it starts nginx on port 8080. The `romm` ready check reports a running migration by matching that process with `pgrep`.
 - Install over an existing install and watch the first start: RomM applies its own schema migrations at boot, and their output is in the `romm` daemon's logs.

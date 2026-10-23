@@ -10,7 +10,7 @@ StartOS creates RomM's administrator account for you. Run **Set Admin Password**
 
 A web library for your game collection. Drop ROM files into a folder per console, run a scan, and RomM matches each file against online games databases to fill in cover art, release dates, descriptions, and box scans — then lets you browse, search, and play the supported ones in the browser.
 
-This package includes RomM 5.3.1, with security and stability fixes, and requires StartOS 0.4.0.2 or later. See the [upstream release notes](https://github.com/rommapp/romm/releases/tag/5.3.1) for the full list of changes.
+This package includes RomM 5.4.1 and requires StartOS 0.4.0.2 or later. See the [upstream release notes](https://github.com/rommapp/romm/releases/tag/5.4.1) for the full list of changes.
 
 RomM comes with its own database and cache; nothing else needs installing. With internal storage, your library, artwork, saves and database are included in RomM's StartOS backup. Shared ROM libraries require a separate file manager backup. Existing installations keep their detected layout during the upgrade.
 
@@ -39,6 +39,7 @@ Everything happens here: browsing and searching the collection, editing what a s
   If you change the `admin` password from inside RomM instead, this action can no longer replace it — StartOS no longer knows the current one, and the action will tell you so. Use RomM's own profile page from then on.
 
 - **Configure Metadata Providers** — turns each of IGDB, MobyGames, and SteamGridDB on or off, asking for that provider's credentials only when you turn it on. IGDB covers the most ground and is the one to start with; MobyGames fills in descriptions for older titles, and SteamGridDB adds artwork. All three are free to sign up for. Saving restarts RomM.
+- **Configure Email** — connects RomM to your SMTP server so it can email password-reset links and send notifications by email. Reset links use your Primary URL. Change the admin account's email address in RomM's profile page if you want its reset links delivered. Saving restarts RomM.
 
 - **Set Primary URL**: chooses the address RomM uses for invite and password-reset links. RomM follows changes to that hostname's port or HTTPS setting. Changing the effective address restarts RomM. If the saved hostname disappears, StartOS prompts you to choose another one and RomM temporarily uses another available address. Your saved choice stays intact. If no address is available, links may remain unreachable until an address returns.
 

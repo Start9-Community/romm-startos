@@ -17,7 +17,7 @@ export const manifest = setupManifest({
         dockerBuild: {
           buildArgs: {
             IMAGE:
-              'rommapp/romm:5.3.1@sha256:0d66b4ea152a237c7f24b95e87459f46d3c596a7c0b35a82f26bc971487278b3',
+              'rommapp/romm:5.4.1@sha256:8677fb7b81b1d3db20b849e989a1dadc2a11159e51eb34a2acdcb01102274edf',
           },
         },
       },

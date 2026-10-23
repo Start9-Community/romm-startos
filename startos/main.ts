@@ -171,17 +171,49 @@ export const main = sdk.setupMain(async ({ effects }) => {
           ...(store.steamgriddb?.selection === 'enabled' && {
             STEAMGRIDDB_API_KEY: store.steamgriddb.value.apiKey,
           }),
+          ...(store.smtp?.selection === 'enabled' && {
+            SMTP_HOST: store.smtp.value.host,
+            SMTP_PORT: String(store.smtp.value.port),
+            SMTP_SECURITY: store.smtp.value.security,
+            SMTP_FROM: store.smtp.value.from,
+            ...(store.smtp.value.username && {
+              SMTP_USERNAME: store.smtp.value.username,
+            }),
+            ...(store.smtp.value.password && {
+              SMTP_PASSWORD: store.smtp.value.password,
+            }),
+          }),
           ...(baseUrl && { ROMM_BASE_URL: baseUrl }),
         },
       },
       ready: {
         display: i18n('Web Interface'),
         gracePeriod: 180000,
-        fn: () =>
-          sdk.healthCheck.checkPortListening(effects, uiPort, {
-            successMessage: i18n('RomM is ready'),
-            errorMessage: i18n('RomM is not ready'),
-          }),
+        fn: async () => {
+          const listening = await sdk.healthCheck.checkPortListening(
+            effects,
+            uiPort,
+            {
+              successMessage: i18n('RomM is ready'),
+              errorMessage: i18n('RomM is not ready'),
+            },
+          )
+          if (listening.result === 'success') return listening
+          // RomM's entrypoint runs its schema migrations before it opens the port.
+          const { exitCode } = await romm.exec([
+            'pgrep',
+            '-f',
+            'alembic upgrade',
+          ])
+          return exitCode === 0
+            ? {
+                result: 'starting',
+                message: i18n(
+                  'Applying database migrations. After an update this can take 15–20 minutes on a large library; do not stop or restart RomM.',
+                ),
+              }
+            : listening
+        },
       },
       requires: ['database-grants'],
     })

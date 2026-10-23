@@ -81,6 +81,21 @@ const dict = {
   'The selected file manager is no longer installed.': 120,
   'Library copy failed. Stop RomM and use Configure Library Storage to retry, or run Cancel Library Copy.': 121,
   'Optional shared storage for the RomM library.': 122,
+  Email: 123,
+  'Lets RomM send password-reset links and notifications through your SMTP server.': 124,
+  'SMTP Host': 125,
+  'SMTP Port': 126,
+  Security: 127,
+  'STARTTLS (usually port 587)': 128,
+  'Implicit TLS (usually port 465)': 129,
+  None: 130,
+  'Sender Address': 131,
+  'The From address on every email RomM sends.': 132,
+  'Configure Email': 133,
+  'Connect RomM to an SMTP server so it can email password-reset links and notifications.': 134,
+  'Email Settings Saved': 135,
+  'RomM is restarting with the email settings you saved.': 136,
+  'Applying database migrations. After an update this can take 15–20 minutes on a large library; do not stop or restart RomM.': 137,
 } as const
 
 export type I18nKey = keyof typeof dict

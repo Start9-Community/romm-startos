@@ -24,6 +24,14 @@ const shape = z.looseObject({
   igdb: provider({ clientId: z.string(), clientSecret: z.string() }),
   mobygames: provider({ apiKey: z.string() }),
   steamgriddb: provider({ apiKey: z.string() }),
+  smtp: provider({
+    host: z.string(),
+    port: z.number(),
+    security: z.enum(['starttls', 'tls', 'none']),
+    username: z.string().nullable(),
+    password: z.string().nullable(),
+    from: z.string(),
+  }),
 })
 
 export const storeJson = FileHelper.json(
