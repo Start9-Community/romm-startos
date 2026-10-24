@@ -1,6 +1,6 @@
 # Updating the upstream version
 
-This package runs the official `rommapp/romm` all-in-one image unmodified, alongside the official `mariadb` image.
+This package runs the official `rommapp/romm` all-in-one image, extended by the root `Dockerfile`, alongside the official `mariadb` image.
 
 ## Validating the package
 

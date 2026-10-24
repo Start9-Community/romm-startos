@@ -43,7 +43,7 @@ Two images run, one of them ours.
 
 Both build for `x86_64` and `aarch64`.
 
-The root `Dockerfile` upgrades the RomM image's CA store and copies it over the venv's certifi bundle, a temporary layer that comes out once upstream ships an image built on a fixed store.
+The root `Dockerfile` upgrades the RomM image's CA store, copying it over the venv's certifi bundle, and its Alpine `nodejs`. Each is a temporary layer that comes out once upstream ships an image built on the fixed package.
 
 The MariaDB image retains the legacy command aliases used by earlier package revisions. SDK 3's `sdk.Backups.withMariadbDump` uses MariaDB's native command names. Nothing else about the image is changed, and the daemon runs upstream's own entrypoint.
 
