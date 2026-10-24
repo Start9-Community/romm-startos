@@ -6,3 +6,4 @@ RUN apk upgrade --no-cache ca-certificates ca-certificates-bundle \
  && find /src/.venv -path '*/certifi/cacert.pem' -exec cp /etc/ssl/certs/ca-certificates.crt {} \; \
  && ! grep -q MIICTjCCAdOgAwIBAgIKPPYHqWhwDtqLhDAKBggqhkjOPQQDAzBr /etc/ssl/certs/ca-certificates.crt \
  && ! find /src/.venv -path '*/certifi/cacert.pem' -exec grep -l MIICTjCCAdOgAwIBAgIKPPYHqWhwDtqLhDAKBggqhkjOPQQDAzBr {} + | grep -q .
+RUN apk add --no-cache --upgrade 'nodejs>=24.22.1-r0'
