@@ -12,3 +12,4 @@ bare clone with no workspace, the full guide is at <https://docs.start9.com/pack
 - **RomM only accepts an account through its API, which is why `admin-account` is a oneshot rather than an init step.** Init cannot reach a server that is not running yet. Letting RomM's own setup wizard run would hand the instance to whoever opens the address first.
 - **Rotation uses `PUT /api/users/{id}` with the stored password, not an admin endpoint.** RomM has no way to set a password without authenticating as its owner, so a password changed inside RomM can no longer be rotated from here.
 - **`store.json` lives at the root of `main`, which is mounted whole at `/romm`.** RomM can read it. Anything added to that model is readable by the application.
+- **The persisted file-model tests require Linux**, because SDK 3 uses Linux filesystem locking; run the full suite on Linux in addition to any host checks. `npm run test:runtime` needs Docker.
