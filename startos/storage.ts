@@ -6,6 +6,7 @@ import type { LibraryStorage } from './storageState'
 export { storageShape, storageMigrationShape } from './storageState'
 export type { LibraryStorage, StorageMigration } from './storageState'
 
+// A provider's id and `data` volume must match this, and its range in dependencies.ts.
 type StorageProviderManifest = Omit<T.SDKManifest, 'id' | 'volumes'> & {
   id: 'nextexplorer' | 'filebrowser'
   volumes: ['data']
