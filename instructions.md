@@ -10,7 +10,7 @@ StartOS creates RomM's administrator account for you. Run **Set Admin Password**
 
 A web library for your game collection. Drop ROM files into a folder per console, run a scan, and RomM matches each file against online games databases to fill in cover art, release dates, descriptions, and box scans — then lets you browse, search, and play the supported ones in the browser.
 
-This package includes RomM 5.4.1 and requires StartOS 0.4.0.2 or later. See the [upstream release notes](https://github.com/rommapp/romm/releases/tag/5.4.1) for the full list of changes.
+This package includes RomM 5.4.1 and requires StartOS 0.4.1 or later. See the [upstream release notes](https://github.com/rommapp/romm/releases/tag/5.4.1) for the full list of changes.
 
 RomM comes with its own database and cache; nothing else needs installing. With internal storage, your library, artwork, saves and database are included in RomM's StartOS backup. Shared ROM libraries require a separate file manager backup. Existing installations keep their detected layout during the upgrade.
 
@@ -45,7 +45,7 @@ Everything happens here: browsing and searching the collection, editing what a s
 
 - **Remove Retained Library**: permanently deletes a selected inactive internal copy after you have verified the active library and backed it up. This frees space and reduces future backups. Removing the original library also removes the option to recover that copy.
 
-- **Configure Library Storage**: available while RomM is stopped. Queues a copy of the current ROM library into an empty folder in NextExplorer or File Browser, including Quantum, or back into internal storage. Start RomM to run the copy before its web interface starts. The original files remain in place.
+- **Configure Library Storage**: available while RomM is stopped. Queues a copy of the current ROM library into an empty folder in NextExplorer or FileBrowser Quantum, or back into internal storage. Start RomM to run the copy before its web interface starts. The original files remain in place.
 
 - **Recover Internal Library**: selects the original retained `main:library` without accessing a missing file manager. Its result identifies the recovered path.
 
@@ -53,10 +53,10 @@ Everything happens here: browsing and searching the collection, editing what a s
 
 ### Organizing multi-disc games with a file manager
 
-1. Back up RomM, install NextExplorer or File Browser, and stop RomM.
+1. Back up RomM, install NextExplorer or FileBrowser Quantum, and stop RomM.
 2. Run **Configure Library Storage**, choose the file manager, and accept the `RomM` folder name or enter another empty folder. The destination needs enough space for a complete copy.
 3. Start RomM. It copies the library first, then starts its web interface. Avoid edits in the file manager until copying finishes. Large collections can take a long time. RomM's logs report copied files and bytes every ten seconds.
-4. Open the file manager. In NextExplorer, the folder appears as a drive; allow the intended accounts to access it. In File Browser or Quantum, open that folder from the files screen.
+4. Open the file manager. In NextExplorer, the folder appears as a drive; allow the intended accounts to access it. In FileBrowser Quantum, open that folder from the files screen.
 5. Open `library/roms/<platform>/` for a new library, or the equivalent existing platform folder. Create a game folder and move that game's disc files into it. Follow RomM's [folder structure guide](https://docs.romm.app/latest/getting-started/folder-structure/) for the layout your library uses.
 6. Scan the library in RomM. Check that the grouped game and its discs are detected as expected.
 
