@@ -11,7 +11,7 @@
 
 RomM is a self-hosted manager for a personal game library: it scans a folder of ROMs, matches each one against online games databases for cover art and metadata, and serves the result as a browsable, playable web collection.
 
-This package runs RomM 5.4.1 and requires StartOS 0.4.0.2 or later. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
+This package runs RomM 5.4.1 and requires StartOS 0.4.1 or later. Upgrades from versions before 5.3.0 still apply the package's library configuration migration.
 
 ---
 
@@ -63,7 +63,7 @@ Two private volumes are always present. Internal storage is the default.
 
 `main` is mounted at `/romm`. The second mount exposes the same `redis-data/` directory at Valkey's fixed path outside `/romm`.
 
-**Configure Library Storage** copies only `library/` into a dedicated folder in NextExplorer or File Browser, including FileBrowser Quantum. Only `data:<folder>/library` is overlaid at `/romm/library`. Saves, screenshots, artwork, LaunchBox data, configuration, synchronization keys, credentials and Redis remain in RomM's private `main` volume. RomM 5.3.0 falls back to copying when it cannot hardlink across mounts; hardlinks within the library are preserved by the migration.
+**Configure Library Storage** copies only `library/` into a dedicated folder in NextExplorer or FileBrowser Quantum. Only `data:<folder>/library` is overlaid at `/romm/library`. Saves, screenshots, artwork, LaunchBox data, configuration, synchronization keys, credentials and Redis remain in RomM's private `main` volume. RomM 5.3.0 falls back to copying when it cannot hardlink across mounts; hardlinks within the library are preserved by the migration.
 
 Shared files are owned by UID/GID 1000 for the file manager. The external mount maps filesystem UID/GID 1000 to RomM's root user, so new RomM uploads stay writable in the file manager. Media files are readable by nginx's worker user. The mapping is restricted to the chosen folder.
 
@@ -95,17 +95,16 @@ With the library-only layout, `store.json` is visible to RomM at `/romm/store.js
 
 ## Dependencies
 
-NextExplorer (`nextexplorer`) and File Browser (`filebrowser`, including the Quantum flavor) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running or publicly reachable for RomM to access the files. Internal storage needs neither service.
+NextExplorer (`nextexplorer`) and FileBrowser Quantum (`filebrowser`) are optional dependencies. The selected shared storage provider and any queued copy's source and destination providers are declared as required to exist. Their servers do not need to be running or publicly reachable for RomM to access the files. Internal storage needs neither service.
 
 RomM needs the provider's `data` volume and files owned by UID/GID 1000. The supported version floors follow that contract:
 
-| Provider            | Minimum version                                     | Verified contract                                                                                                                                                                                                                                                                                                                                               |
-| ------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NextExplorer        | `2.2.7:0`                                           | [Initial package](https://github.com/Start9Labs/nextexplorer-startos/commit/04f7ecbfc31ad2205e0222dd7568fb881aa06c79): `data` at `/mnt`, owned by UID/GID 1000                                                                                                                                                                                                  |
-| File Browser        | `2.52.0:0`                                          | [Separate `data` volume](https://github.com/Start9Labs/filebrowser-startos/commit/fdf0462a676b45bc444efe16963e32d694a24bbb), [ownership setup](https://github.com/Start9Labs/filebrowser-startos/blob/47f3af1d8a912a209c53125d6b5cb21af38f1c68/startos/main.ts) and [upstream UID/GID 1000](https://github.com/filebrowser/filebrowser/blob/v2.52.0/Dockerfile) |
-| FileBrowser Quantum | any release that declares `.satisfies('2.63.23:3')` | `data` at `/srv`, owned by UID/GID 1000; matched by the File Browser range, so it needs no `#quantum` range of its own                                                                                                                                                                                                                                          |
+| Provider            | Minimum version           | Verified contract                                                                                                                                              |
+| ------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NextExplorer        | `2.2.7:0`                 | [Initial package](https://github.com/Start9Labs/nextexplorer-startos/commit/04f7ecbfc31ad2205e0222dd7568fb881aa06c79): `data` at `/mnt`, owned by UID/GID 1000 |
+| FileBrowser Quantum | `#quantum:2.0.2-stable:3` | `data` at `/srv`, owned by UID/GID 1000                                                                                                                        |
 
-The SDK dependency builder publishes each provider's metadata and version range and enables it from the stored selection and copy state. Storage mounts use a local TypeScript contract for the `filebrowser` and `nextexplorer` package IDs and their `data` volume. The sibling packages are not npm build dependencies. The Quantum flavor shares the `filebrowser` package ID and volume interface; it does not require a second dependency alias.
+The SDK dependency builder publishes each provider's metadata and version range and enables it from the stored selection and copy state. Storage mounts use a local TypeScript contract for the `filebrowser` and `nextexplorer` package IDs and their `data` volume. The sibling packages are not npm build dependencies.
 
 ## Network Access and Interfaces
 
@@ -175,7 +174,7 @@ Reset links point at the Primary URL. The admin account is created with the plac
 
 ### Configure Library Storage
 
-Run this action while RomM is stopped. Select internal storage, NextExplorer, or File Browser. For a file manager, enter one empty folder name containing only letters, numbers, hyphens and underscores, beginning with a letter or number. The default is `RomM`; it appears as a NextExplorer drive or a File Browser folder.
+Run this action while RomM is stopped. Select internal storage, NextExplorer, or FileBrowser Quantum. For a file manager, enter one empty folder name containing only letters, numbers, hyphens and underscores, beginning with a letter or number. The default is `RomM`; it appears as a NextExplorer drive or a FileBrowser Quantum folder.
 
 The action queues a copy and returns immediately. On the next Start, a dedicated `library-storage-copy` oneshot copies the library before starting either MariaDB or RomM. The copy belongs to the service lifecycle, so Stop interrupts it. It is not limited by the action execution timeout. Logs report copied files and bytes every ten seconds, including while an individual file is still copying. Stop takes effect between file copies.
 

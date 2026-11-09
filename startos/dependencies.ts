@@ -44,7 +44,7 @@ export const dependencies = sdk.Dependencies.of()
         icon: 'https://raw.githubusercontent.com/Start9Labs/filebrowser-quantum-startos/e936a6c85a97b930b43cad5e9c0dd4898a2df567/icon.svg',
       },
       kind: 'exists',
-      versionRange: '>=2.52.0:0',
+      versionRange: '>=#quantum:2.0.2-stable:3',
       enabled: ({ effects }) => storageProviderEnabled('filebrowser', effects),
     }),
   )

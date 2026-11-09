@@ -70,7 +70,7 @@ test(
           filebrowser: {
             description: 'Optional shared storage for the RomM library.',
             optional: true,
-            versionRange: '>=2.52.0:0',
+            versionRange: '>=#quantum:2.0.2-stable:3',
             kind: 'exists',
             metadata: {
               title: 'FileBrowser Quantum',
@@ -92,7 +92,7 @@ test(
     const fileRequirement: T.DependencyRequirement = {
       id: 'filebrowser',
       kind: 'exists',
-      versionRange: '>=2.52.0:0',
+      versionRange: '>=#quantum:2.0.2-stable:3',
     }
     const expectRequirements = async (expected: T.DependencyRequirement[]) => {
       const deadline = Date.now() + 3000

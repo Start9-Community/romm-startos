@@ -39,7 +39,7 @@ export const inputSpec = InputSpec.of({
     variants: Variants.of({
       internal: { name: i18n('Internal Storage'), spec: InputSpec.of({}) },
       nextexplorer: { name: 'NextExplorer', spec: folderSpec },
-      filebrowser: { name: 'File Browser', spec: folderSpec },
+      filebrowser: { name: 'FileBrowser Quantum', spec: folderSpec },
     }),
   }),
 })
